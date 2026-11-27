@@ -7,8 +7,8 @@ classdef TestStimulatorRowFromWiring < matlab.unittest.TestCase
 %   manipulation DID-matlab's resolveEpochProbemap writes for each
 %   stimulator row of a v1 probe map is no longer written, and the row is
 %   rebuilt from the wiring relation (rig, channels) and the stimulator
-%   element (name, reference, type, subject through its `observes` /
-%   `derived_from` relation). ndi.vintage.ingestedEpochs reads it so
+%   element (name, reference, type, and its subject: ndi.vintage.elementFields,
+%   no `observes` relation since [no observes relation in v2]). ndi.vintage.ingestedEpochs reads it so
 %   (A ROW WITH NO STATEMENT in its header).
 %
 %   THE FIXTURE is a real migrated session: three epochs of the Intan file
@@ -250,7 +250,8 @@ classdef TestStimulatorRowFromWiring < matlab.unittest.TestCase
             % second pass retires its `observes` and holds the subject in the
             % migration report's carried fields. Before those decisions
             % (Jess Haley, 2026-11-19) this test stated the `observes` was
-            % kept.
+            % kept. [no observes relation in v2] (2026-11-26): the subject is
+            % read from the v1 element, and no `observes` is left.
             S = testCase.ready(testCase.Session);
             P = ndi.unittest.vintage.TestStimulatorRowFromWiring;
             stimId = P.stimulatorId(S);
@@ -259,10 +260,12 @@ classdef TestStimulatorRowFromWiring < matlab.unittest.TestCase
             r = testCase.MigrationResult.secondPass.observesRetirement;
             testCase.assertTrue(isstruct(r) && isfield(r, 'carried_element_ids'), ...
                 'the migration ran no `observes` retirement');
-            fprintf(['  observes retirement: %d `observes` relation(s); retired %d ' ...
-                '(presentation %d, bath %d, carried %d); kept %d (observations %d)\n'], ...
-                r.observes_seen, r.observes_retired, r.retired_by_presentation, ...
-                r.retired_by_bath, r.retired_carried, r.observes_kept, r.kept_observation);
+            fprintf(['  element subjects: %d v1 element(s) with a subject (%d converted); ' ...
+                'named by an observation %d, a presentation %d, a bath %d, another ' ...
+                'manipulation %d; carried %d; pass-1 `observes` %d (removed %d, kept %d)\n'], ...
+                r.elements_with_v1_subject, r.elements_converted, r.named_by_observation, ...
+                r.named_by_presentation, r.named_by_bath, r.named_by_other_manipulation, ...
+                r.carried, r.observes_seen, r.observes_removed, r.observes_kept);
             testCase.verifyEqual(r.carried_element_ids, {stimId}, ...
                 'the stimulator is not the one element carried');
             testCase.verifyEqual(r.carried_recorded, 1);

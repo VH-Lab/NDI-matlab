@@ -52,8 +52,9 @@ function E = ingestedEpochs(ndi_session_obj, docs, probemapClass, options)
 %                body-less per-epoch Stimulator manipulation is no longer
 %                written, and a stimulator's row is rebuilt from its wiring
 %                relation (rig, channels) and the element (name, reference,
-%                type, and its subject through its `observes` relation, else
-%                `derived_from`). So every wiring relation (`connected to`,
+%                type, and its subject: ndi.vintage.elementFields'
+%                subject_id, else `derived_from`; [no observes relation in
+%                v2], Jess Haley, 2026-11-26). So every wiring relation (`connected to`,
 %                RO:0002170) timed by an anchor onto the epoch, whose parent
 %                is the manifest's own system and whose child (the probe) is
 %                the instrument of none of the rows' statements, is a row
@@ -63,7 +64,8 @@ function E = ingestedEpochs(ndi_session_obj, docs, probemapClass, options)
 %                from the element (ndi.vintage.elementFields), devicestring
 %                from the system and the relation (ndi.vintage.wiredDeviceString),
 %                subjectstring the local_identifier of the element's
-%                subject_id (its `observes` parent), else of its
+%                subject_id (an observation's or a manipulation's entity,
+%                or the subject the migration carried), else of its
 %                `derived_from` parent. Data migrated while the manipulation
 %                was still written reads as before: the manipulation names
 %                the stimulator, so its wiring adds no second row. A
@@ -659,8 +661,8 @@ end
 
 function [el, cache] = elementOf(S, id, cache)
 % name, reference and type of the element entity ID (cached), and its
-% subject: the entity it `observes` (elementFields' subject_id), else the
-% one it is `derived_from` (A ROW WITH NO STATEMENT; DID-matlab's round trip
+% subject: elementFields' subject_id (no `observes` relation, [no observes
+% relation in v2]), else the one it is `derived_from` (A ROW WITH NO STATEMENT; DID-matlab's round trip
 % reads the same, +roundtrip/private/manifestProbemap elementSubjectId)
 el = [];
 if isKey(cache.element, id)

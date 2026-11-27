@@ -70,26 +70,29 @@ function f = elementFields(subjectDoc, ndi_session_obj, pieces)
 %                          multi-unit). With the assertion, read as before
 %                          (its `element type` assertion)
 %     underlying_element_id -> a `directed_relation` `derived_from`
-%     subject_id (the specimen) -> a `directed_relation` `observes`,
-%                          OR -- and this is the case that was missing --
-%                          the `subject_id` of the typed observation that
-%                          names this element as its `instrument_id`,
+%     subject_id (the specimen) -> the `entity_id` of the first
+%                          observation that names this element as its
+%                          `instrument_id`,
 %                          OR the v1 subject NDI's second pass carried in
-%                          the migration report for an element whose
-%                          `observes` it retired because no statement
-%                          names that subject ([stimulator subject carried
+%                          the migration report for an element no statement
+%                          gives it back for ([stimulator subject carried
 %                          as needing information], [one-field carry in
 %                          the migration report], [recording probe subject
 %                          carried the same way], Jess Haley, 2026-11-19;
 %                          ndi.vintage.carriedSubjects),
-%                          OR, for a stimulator whose `observes` NDI's
-%                          second pass retired on its presentations or
-%                          baths ([observes retires in the second pass],
-%                          Jess Haley, 2026-11-17; [bath manipulation
-%                          retires observes], 2026-11-19), the entity of
-%                          its stimulus presentation manipulations (value
-%                          kind `item`) or bath manipulations (value kind
-%                          `formulation`).
+%                          OR the `entity_id` of the first manipulation
+%                          made with it (a stimulus presentation, value
+%                          kind `item`; a bath, value kind `formulation`;
+%                          a per-epoch Stimulator manipulation;
+%                          ndi.vintage.subjectNamingManipulations).
+%                          Decided by Jess Haley, 2026-11-26 [no observes
+%                          relation in v2] (did-schema
+%                          did_v2_standing_wiring_plan.md): v2 has no
+%                          `observes` relation; "the animal is the
+%                          `entity_id` of the observations and
+%                          manipulations made with the element, or, where
+%                          none names it, is carried as the element's
+%                          subject". An `observes` relation is not read.
 %     direct           -> NOT STORED ANYWHERE. Recovered from which
 %                          lineage the migrator emitted.
 %
@@ -231,42 +234,34 @@ else
     f.underlying_element_id = parentOf(pieces.derivedDocs);
 end
 
-% FOUR PLACES, IN THIS ORDER, and the second is the one that was missing.
-% The typed observation is asked about FIRST because it is the STRONGER
-% signal: jRecordingObservation only runs on a direct element, so its
-% existence settles `direct` outright, whereas an `observes` relation is
-% what survives when no observation was assembled. THIRD, the subject the
-% migration carried: Decided by Jess Haley, 2026-11-19 [stimulator subject
-% carried as needing information], [one-field carry in the migration
-% report], [recording probe subject carried the same way] (did-schema
-% did_v2_standing_wiring_plan.md; carry register row carry-172): where no
-% presentation, bath manipulation or Stimulator manipulation names the v1
-% subject (and no recording observation is made with the element), NDI's
-% second pass retires `observes` and holds the subject in the migration
-% report's carried fields (ndi.vintage.carriedSubjects). It is asked before
-% the presentations because it is written exactly when they name another
-% entity (a cohort, another animal). FOURTH, a stimulator's stimulus
-% presentations and baths: Decided by Jess Haley, 2026-11-17 [observes
-% retires in the second pass] and 2026-11-19 [bath manipulation retires
-% observes] (did-schema did_v2_go_forward_class_audit.md): NDI's second pass
-% retires a stimulator's `observes` relation where a presentation
-% manipulation (value kind `item`) or a bath manipulation (value kind
-% `formulation`) names the stimulator as its instrument and the same animal
-% as its entity, and only where every one of them names that animal
-% (ndi.migrate.internal.observesRetirement), so the first one's entity is
-% the v1 element's subject. The third and fourth are asked only when the
-% first two find nothing, so an element that still has its `observes`
-% relation reads exactly as before.
+% THREE PLACES, IN THIS ORDER. The typed observation is asked about FIRST
+% because it is the STRONGER signal: an observation made with an element
+% settles `direct` outright. SECOND, the subject the migration carried:
+% Decided by Jess Haley, 2026-11-19 [stimulator subject carried as needing
+% information], [one-field carry in the migration report], [recording probe
+% subject carried the same way] (did-schema did_v2_standing_wiring_plan.md;
+% carry register row carry-172): where the statements made with the element
+% do not give its v1 subject back, NDI's second pass holds the subject in
+% the migration report's carried fields (ndi.vintage.carriedSubjects). It
+% is asked before the manipulations because it is written exactly when they
+% name another entity (a cohort, another animal) or several
+% (ndi.migrate.internal.observesRetirement). THIRD, the manipulations made
+% with the element (stimulus presentations, baths, per-epoch Stimulator
+% manipulations, ndi.vintage.subjectNamingManipulations): Decided by Jess
+% Haley, 2026-11-26 [no observes relation in v2] (did-schema
+% did_v2_standing_wiring_plan.md): "the animal is the `entity_id` of the
+% observations and manipulations made with the element, or, where none
+% names it, is carried as the element's subject". No subject is carried
+% only where every manipulation made with it names that one animal, so the
+% first one's entity is the v1 element's subject. Until that decision an
+% `observes` relation was read second; v2 has none, and it is not read.
 if isempty(pieces)
     [specimen, viaObservation] = specimenViaInstrument(ndi_session_obj, docId);
-    if isempty(specimen)
-        specimen = relationTarget(ndi_session_obj, docId, 'observes');
-    end
     if isempty(specimen) && ~viaObservation && ~isempty(ndi_session_obj)
         specimen = ndi.vintage.carriedSubjects(ndi_session_obj, docId);
     end
     if isempty(specimen) && ~viaObservation && ~isempty(ndi_session_obj)
-        specimen = specimenViaPresentation(ndi_session_obj, docId);
+        specimen = specimenViaManipulation(ndi_session_obj, docId);
     end
 else
     if isfield(pieces, 'observationSpecimen')
@@ -275,9 +270,6 @@ else
         viaObservation = pieces.observationSpecimen.found;
     else
         [specimen, viaObservation] = specimenOf(pieces.observationDocs);
-    end
-    if isempty(specimen)
-        specimen = parentOf(pieces.observesDocs);
     end
     if isempty(specimen) && ~viaObservation
         if isfield(pieces, 'carriedSpecimen')
@@ -288,6 +280,8 @@ else
         end
     end
     if isempty(specimen) && ~viaObservation
+        % the manipulations made with the element (the `presentation*`
+        % pieces: ndi.vintage.subjectNamingManipulations)
         if isfield(pieces, 'presentationSpecimen')
             % read as edges (ndi.vintage.prefetchElementFields)
             specimen = pieces.presentationSpecimen.entity;
@@ -449,19 +443,19 @@ specimen = ndi.v2.edgeIds(ndi.v2.props(docs{1}), 'entity_id');
 if isempty(specimen), specimen = ''; else, specimen = specimen{1}; end
 end
 
-function specimen = specimenViaPresentation(ndi_session_obj, elementId)
-%SPECIMENVIAPRESENTATION The animal a stimulator's stimulus presentations or baths name.
+function specimen = specimenViaManipulation(ndi_session_obj, elementId)
+%SPECIMENVIAMANIPULATION The animal the manipulations made with an element name.
 %   A converted stimulus presentation is a `manipulation` with value kind
 %   `item`: instrument_id the stimulator (v1 `stimulus_element_id`),
 %   entity_id the animal (ndi.migrate.internal.stimulusPresentationToItem);
 %   a bath is a `manipulation` with value kind `formulation`, instrument_id
 %   the stimulator, entity_id the stimulator's subject
-%   (ndi.migrate.internal.stimulusBathToBath). Where NDI's second pass
-%   retired the stimulator's `observes` relation on them ([observes retires
-%   in the second pass], [bath manipulation retires observes]), every
-%   presentation and bath by it names the same animal, so the first one's
-%   entity is the subject. A per-epoch Stimulator manipulation (value kind
-%   `term`) is not asked. '' when none.
+%   (ndi.migrate.internal.stimulusBathToBath); a per-epoch Stimulator
+%   manipulation (value kind `term`, DID-matlab resolveEpochProbemap) names
+%   the row's subject. NDI's second pass carries the element's v1 subject
+%   unless every manipulation made with it names that one animal
+%   ([no observes relation in v2]; ndi.migrate.internal.observesRetirement),
+%   so the first one's entity is the subject. '' when none.
 specimen = '';
 q = ndi.vintage.subjectNamingManipulations() & ...
     ndi.query('', 'depends_on', 'instrument_id', elementId);

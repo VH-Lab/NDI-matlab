@@ -6,9 +6,10 @@ function n = prefetchElementFields(S, docs, useIndex)
 %   and documents that are not entities are skipped), what
 %   ndi.vintage.elementFields reads for one element with five searches --
 %   its type and class assertions, its `derived_from` relation, the first
-%   observation made with it, its `observes` relation, and (for an element no
-%   observation names) the subject the migration report carried for it and
-%   the first stimulus presentation or bath made with it -- with
+%   observation made with it, and (for an element no observation names) the
+%   subject the migration report carried for it and the first manipulation
+%   made with it (no `observes` relation: [no observes relation in v2],
+%   Jess Haley, 2026-11-26) -- with
 %   ONE search per
 %   kind for all of them (the edge lists go through ndi.vintage.edgeIn, one
 %   SQL `IN`). Each element's fields are then built from its share of the
@@ -115,9 +116,6 @@ relEdges = {'child_id', 'child', 'parent_id', 'parent'};
 derivedDocs = edgesOrDocs(S, ndi.query('', 'isa', 'directed_relation', '') & ...
     ndi.v2.vocabQuery('directed_relation.relation', 'relation', 'derived_from') & children, ...
     relEdges);
-observesDocs = edgesOrDocs(S, ndi.query('', 'isa', 'directed_relation', '') & ...
-    ndi.v2.vocabQuery('directed_relation.relation', 'relation', 'observes') & children, ...
-    relEdges);
 % The observations are only asked which entity the FIRST one made with each
 % element is about: read as edges where the database can (no document
 % decoded; on Dab about 3,900 observations for 606 elements), else as
@@ -135,22 +133,20 @@ end
 byClass = groupBy(classDocs, {'entity_id', 'subject_id'}, ids);
 byType = groupBy(typeDocs, {'entity_id', 'subject_id'}, ids);
 byDerived = groupBy(derivedDocs, {'child_id', 'child'}, ids);
-byObserves = groupBy(observesDocs, {'child_id', 'child'}, ids);
 if isstruct(obsEdges)
     firstObs = firstObservationOf(obsEdges, ids);
 else
     byObservation = groupBy(observationDocs, {'instrument_id'}, ids);
 end
 
-% A stimulator whose `observes` relation NDI's second pass retired ([observes
-% retires in the second pass], Jess Haley, 2026-11-17; [bath manipulation
-% retires observes], 2026-11-19) is read from its stimulus presentations and
-% baths (manipulations of value kind `item` or `formulation` naming it as
-% instrument, ndi.vintage.subjectNamingManipulations): asked, in one search,
-% only for the elements no observation names, and used by elementFields only
-% when neither an observation, an `observes` relation nor a carried subject
-% gives the specimen. A presentation points at the element, so adding or
-% removing one drops the element's derived row.
+% An element no observation names is read from the manipulations made with
+% it (stimulus presentations, baths, per-epoch Stimulator manipulations,
+% ndi.vintage.subjectNamingManipulations; [no observes relation in v2],
+% Jess Haley, 2026-11-26): asked, in one search, only for the elements no
+% observation names, and used by elementFields only when neither an
+% observation nor a carried subject gives the specimen. A manipulation
+% points at the element, so adding or removing one drops the element's
+% derived row.
 if isstruct(obsEdges)
     noObservation = ids(cellfun(@(i) ~firstObs(i).found, ids));
 else
@@ -175,11 +171,11 @@ else
 end
 
 % The subject NDI's second pass carried in the migration report for an
-% element whose `observes` it retired because no statement names that
-% subject ([one-field carry in the migration report], Jess Haley,
-% 2026-11-19, did-schema did_v2_standing_wiring_plan.md): read once for the
-% session (ndi.vintage.carriedSubjects), used by elementFields only when
-% neither an observation nor an `observes` relation gives the specimen.
+% element whose statements do not give its v1 subject back ([one-field
+% carry in the migration report], Jess Haley, 2026-11-19; [no observes
+% relation in v2], 2026-11-26; did-schema did_v2_standing_wiring_plan.md):
+% read once for the session (ndi.vintage.carriedSubjects), used by
+% elementFields only when no observation gives the specimen.
 carried = containers.Map('KeyType', 'char', 'ValueType', 'char');
 carriedFrom = {};
 if ~isempty(noObservation)
@@ -190,7 +186,7 @@ rowValues = cell(1, numel(ids));
 rowDeps = cell(1, numel(ids));
 for k = 1:numel(ids)
     pieces = struct('classDocs', {byClass(ids{k})}, 'typeDocs', {byType(ids{k})}, ...
-        'derivedDocs', {byDerived(ids{k})}, 'observesDocs', {byObserves(ids{k})});
+        'derivedDocs', {byDerived(ids{k})});
     if isstruct(obsEdges)
         pieces.observationSpecimen = firstObs(ids{k});   % struct(found, entity)
     else
@@ -221,13 +217,13 @@ for k = 1:numel(ids)
     if useIndex
         rowValues{k} = struct('f', fieldsToIndex(f), 'c', struct('count', numel(cls), 'value', char(v)), ...
             'lv', ROW_VERSION); %#ok<AGROW>
-        % read from: the element entity, and every document of the five
+        % read from: the element entity, and every document of the four
         % reads about it (each points at it, so adding or removing one
         % drops the row, [2 a]), and the documents that make it an element
         % by its links (its recording observations, wiring, derived_from
         % and member_of relations, and a unit's probe:
         % ndi.vintage.linkedElements), so a link added or removed drops it
-        read = [byClass(ids{k}), byType(ids{k}), byDerived(ids{k}), byObserves(ids{k})];
+        read = [byClass(ids{k}), byType(ids{k}), byDerived(ids{k})];
         linkDeps = {};
         if isKey(L.evidence, ids{k})
             linkDeps = reshape(L.evidence(ids{k}), 1, []);
@@ -253,8 +249,9 @@ function v = ROW_VERSION()
 % are rebuilt from the links ([element recognised by its links]); 3 since the
 % subject is also read from the migration report's carried fields and from
 % bath manipulations ([one-field carry in the migration report], [bath
-% manipulation retires observes])
-v = 3;
+% manipulation retires observes]); 4 since no `observes` relation is read and
+% every manipulation made with the element is ([no observes relation in v2])
+v = 4;
 end
 
 function v = fieldsToIndex(f)

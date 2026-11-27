@@ -390,7 +390,7 @@ function result = local(path, options)
     epochAnchorReport = [];
     recordingAttributionReport = [];
     epochProbemapReport = [];
-    observesRetirementReport = [];   % [observes retires in the second pass]
+    observesRetirementReport = [];   % [no observes relation in v2]: the element subjects
     responseParametersReport = [];
     genericFileFoldReport = [];
     validIntervalReport = [];
@@ -1082,18 +1082,44 @@ function result = local(path, options)
         %   WHAT THIS STEP READS AND WRITES: [migration reliability practices] (c),
         %   Jess Haley, 2026-10-26; DID-matlab tools/batch_pass_order.py derives the
         %   second pass's order from these and checks it.
-        %   It hands resolveObservesRetirement ndi.attributed_via_observes:
-        %   the ids of the observations it re-attributes through a probe's
-        %   `observes` (its report's attributed_via_observes_ids).
+        %   It reads ndi.v1_element_subjects (each direct v1 element's
+        %   `subject_id`, read from the migration input: [no observes
+        %   relation in v2], Jess Haley, 2026-11-26) and hands
+        %   resolveObservesRetirement ndi.attributed_via_element_subject: the
+        %   ids of the observations it re-attributes through a probe's v1
+        %   subject (its report's attributed_via_element_subject_ids).
         %
-        %   BATCH-PASS-READS: observation(pyraview),
-        %       directed_relation(observes), entity(element)
-        %   BATCH-PASS-ADDS: ndi.attributed_via_observes
+        %   BATCH-PASS-READS: observation(pyraview), entity(element),
+        %       ndi.v1_element_subjects
+        %   BATCH-PASS-ADDS: ndi.attributed_via_element_subject
         %   BATCH-PASS-CHANGES: observation(pyraview)
         %   BATCH-PASS-REMOVES: NONE -- it re-attributes
+        % [no observes relation in v2] (Decided by Jess Haley, 2026-11-26,
+        % did-schema did_v2_standing_wiring_plan.md): NDI's second pass reads
+        % each element's v1 `subject_id` directly, from the migration input
+        % (a pure function of `bodies`, read once here)
+        try
+            [v1ElementSubjects, v1ElementSubjectsReport] = ...
+                ndi.migrate.internal.v1ElementSubjects(bodies);
+        catch ME
+            stepErrors(end+1) = struct('step', 'v1ElementSubjectsFailed', 'message', ME.message); %#ok<AGROW>
+            warning('NDI:migrate:v1ElementSubjectsFailed', ...
+                ['Reading the v1 element subjects failed (%s): no element subject ' ...
+                 'is read from v1, so none is carried.'], ME.message);
+            [v1ElementSubjects, v1ElementSubjectsReport] = ...
+                ndi.migrate.internal.v1ElementSubjects({});
+        end
+        fprintf(['V1 ELEMENT SUBJECTS ([no observes relation in v2])\n' ...
+            '  DENOMINATOR: %d v1 document(s); %d element(s)\n' ...
+            '  direct with a subject %d; not direct %d, no subject %d, an underlying ' ...
+            'element %d, one id with two subjects %d\n'], ...
+            v1ElementSubjectsReport.bodies_read, v1ElementSubjectsReport.elements, ...
+            v1ElementSubjectsReport.direct_with_subject, v1ElementSubjectsReport.not_direct, ...
+            v1ElementSubjectsReport.no_subject, v1ElementSubjectsReport.with_underlying, ...
+            v1ElementSubjectsReport.conflicting);
         try
             [convertResult, recordingAttributionReport] = ...
-                resolveRecordingAttribution(convertResult, options);
+                resolveRecordingAttribution(convertResult, options, v1ElementSubjects);
         catch ME
             stepErrors(end+1) = struct('step', 'recordingAttributionFailed', 'message', ME.message); %#ok<AGROW>
             warning('NDI:migrate:recordingAttributionFailed', ...
@@ -1114,6 +1140,10 @@ function result = local(path, options)
             % IT ADDS AND NEVER REMOVES SOURCES: `epochfiles_ingested` keeps its
             % probemap (increment 3 renames it), so a failure here leaves the
             % dataset exactly as this pass found it.
+            % The v1 element subjects it compares a stimulator row's subject
+            % with ([no observes relation in v2]: no `observes` relation
+            % states the element's subject) are pass 1's, handed on in
+            % convertResult.element_subjects by did2.convert.v1_to_v2.
             [convertResult, epochProbemapReport] = ...
                 did2.convert.resolveEpochProbemap( ...
                 convertResult, ...
@@ -1129,53 +1159,48 @@ function result = local(path, options)
                  'which is the state without this pass.'], ME.message);
         end
         tStep = migrateStepMark('resolveEpochProbemap', tStart, tStep, convertResult);
-        % [observes retires in the second pass] (Decided by Jess Haley,
-        % 2026-11-17, did-schema did_v2_go_forward_class_audit.md), building
-        % [stimulator link lives in the presentations]: now that the stimulus
-        % presentations are manipulations (resolveStimulusPresentations), a
-        % device's loose `observes` relation retires where a presentation
-        % names that device as instrument and the same animal as entity;
-        % [bath manipulation retires observes] (2026-11-19): a bath
-        % manipulation retires it by the same rule. [stimulator subject
-        % carried as needing information], [one-field carry in the migration
-        % report] and [recording probe subject carried the same way] (Jess
-        % Haley, 2026-11-19, did-schema did_v2_standing_wiring_plan.md;
-        % carry register row carry-172): where no presentation, bath
-        % manipulation or Stimulator manipulation names the v1 subject (and,
-        % for a recording probe, no recording observation is made with it),
-        % the relation retires and the subject is held in the run's migration
-        % report's carried fields. DID's first pass keeps `observes`. ORDER:
-        % after every step that reads `observes` (resolveRecordingAttribution,
-        % whose pyraview donor is a probe's kept `observes`;
-        % did2.convert.resolveEpochProbemap retires it on an observation and
-        % reads it for a stimulator row), and before the migration record is
-        % collected.
+        % [no observes relation in v2] (Decided by Jess Haley, 2026-11-26,
+        % did-schema did_v2_standing_wiring_plan.md; it supersedes the
+        % `observes` parts of [observes retires in the second pass] and [DID
+        % first pass keeps observes]): v2 has no `observes` relation. NDI's
+        % second pass reads each element's v1 `subject_id` directly
+        % (ndi.v1_element_subjects); the animal is the `entity_id` of the
+        % observations and manipulations made with the element, or, where
+        % none names it, is carried as the element's subject in the run's
+        % migration report's carried fields ([stimulator subject carried as
+        % needing information], [one-field carry in the migration report],
+        % [recording probe subject carried the same way], Jess Haley,
+        % 2026-11-19; carry register row carry-172). Any `observes` relation
+        % pass 1 still wrote (a DID-matlab from before that decision) is
+        % removed. ORDER: after the statements are converted (the stimulus
+        % presentations, the baths, resolveRecordingAttribution's
+        % re-attributions and resolveEpochProbemap's recording observations),
+        % and before the migration record is collected.
         %   WHAT THIS STEP READS AND WRITES: [migration reliability practices] (c),
         %   Jess Haley, 2026-10-26; DID-matlab tools/batch_pass_order.py derives the
         %   second pass's order from these and checks it.
-        %   did2.convert.resolveEpochProbemap removes only the `observes`
-        %   relations an observation states again, and the pyraview
-        %   observations an epoch's recording observation replaces; this step
-        %   reads what it keeps, and keeps every relation whose device makes an
-        %   observation, so the two remove disjoint documents. The other statements are read to decide, the
-        %   element entities to check the carried field has a v2 document.
+        %   The statements are read to decide, the element entities to check
+        %   the carried field has a v2 document.
         %   BATCH-PASS-READS: directed_relation(observes no observation states again),
         %       manipulation(stimulus presentation), manipulation(bath),
         %       manipulation(stimulator per epoch),
         %       observation(recording per epoch), observation(pyraview kept),
-        %       entity(element), ndi.attributed_via_observes
+        %       entity(element), ndi.v1_element_subjects,
+        %       ndi.attributed_via_element_subject
         %   BATCH-PASS-ADDS: NONE -- it only removes (the carried subjects go
         %       to the run's migration report, not the batch)
         %   BATCH-PASS-CHANGES: NONE -- it only removes
         %   BATCH-PASS-REMOVES: directed_relation(observes no observation states again)
         try
             [convertResult, observesRetirementReport] = ...
-                resolveObservesRetirement(convertResult, options, recordingAttributionReport);
+                resolveObservesRetirement(convertResult, options, recordingAttributionReport, ...
+                v1ElementSubjects);
         catch ME
             stepErrors(end+1) = struct('step', 'observesRetirementFailed', 'message', ME.message); %#ok<AGROW>
             warning('NDI:migrate:observesRetirementFailed', ...
-                ['Second-pass `observes` retirement failed (%s); leaving every ' ...
-                 '`observes` relation as pass 1 and resolveEpochProbemap left it.'], ...
+                ['Second-pass element subjects failed (%s): no subject carried, and ' ...
+                 'every `observes` relation left as pass 1 and resolveEpochProbemap ' ...
+                 'left it.'], ...
                 ME.message);
         end
         tStep = migrateStepMark('resolveObservesRetirement', tStart, tStep, convertResult);
@@ -2567,7 +2592,7 @@ function report = countOntologyRows(convertResult, bodies)
     report = ndi.migrate.internal.ontologyRowsCarried(decodeBodies(bodies), structs);
 end
 
-function [convertResult, report] = resolveRecordingAttribution(convertResult, options)
+function [convertResult, report] = resolveRecordingAttribution(convertResult, options, v1ElementSubjects)
 %RESOLVERECORDINGATTRIBUTION V_eta second pass: a raw recording is an
 %   observation OF THE SPECIMEN, taken WITH the probe (T7) -- for every emitter,
 %   not just the one that could see the specimen in its own document.
@@ -2590,6 +2615,10 @@ function [convertResult, report] = resolveRecordingAttribution(convertResult, op
 %   settled set rather than bodies that are about to be superseded. Cheap
 %   ordering, one fewer interaction to reason about.
 %
+%   V1ELEMENTSUBJECTS (ndi.migrate.internal.v1ElementSubjects of the migration
+%   input) is the donor where no recording observation is: the element's v1
+%   `subject_id` ([no observes relation in v2], Jess Haley, 2026-11-26).
+%
 %   STATUS: WRITTEN 2026-08-13 IN A CONTAINER WITH NO MATLAB. NOT EXECUTED HERE.
     report = [];
     if ~strcmp(options.TargetVersion, 'did_v2')
@@ -2604,30 +2633,29 @@ function [convertResult, report] = resolveRecordingAttribution(convertResult, op
     for k = 1:numel(docs)
         structs{k} = docs{k}.toStruct();
     end
-    [plan, report] = ndi.migrate.internal.recordingAttribution(structs);
+    [plan, report] = ndi.migrate.internal.recordingAttribution(structs, ...
+        'ElementSubjects', v1ElementSubjects);
 
     % Initialised unconditionally, before the early return: a pass that plans
     % nothing must report the same fields as one that replaces everything.
     report.observations_reattributed = 0;
     report.reattribution_quarantined = 0;
     report.folded                    = false;
-    % the observations re-attributed through the probe's `observes` relation
+    % the observations re-attributed through the probe's v1 subject
     % (resolveObservesRetirement does not count them as the probe's
     % recording observations: [recording probe subject carried the same way])
-    report.attributed_via_observes_ids = {};
+    report.attributed_via_element_subject_ids = {};
     fprintf(['RECORDING ATTRIBUTION\n' ...
-        '  DENOMINATOR: %d migrated document(s); %d observation(s): %d donor(s), %d candidate(s)\n' ...
-        '  attributed %d (via a recording-observation donor %d, via the element''s observes %d); ' ...
-        'observes relations %d\n' ...
-        '  refused: no donor %d, no subject %d, self reference %d, ambiguous probe %d, ' ...
-        'ambiguous observes %d\n'], ...
+        '  DENOMINATOR: %d migrated document(s); %d observation(s): %d donor(s), %d candidate(s); ' ...
+        '%d v1 element subject(s)\n' ...
+        '  attributed %d (via a recording-observation donor %d, via the element''s v1 subject %d)\n' ...
+        '  refused: no donor %d, no subject %d, self reference %d, ambiguous probe %d\n'], ...
         report.documents_inspected, report.observations, report.donors, ...
-        report.candidates, report.attributed, ...
-        report.attributed - report.attributed_via_observes, ...
-        report.attributed_via_observes, report.observes_relations, ...
+        report.candidates, report.element_subjects, report.attributed, ...
+        report.attributed - report.attributed_via_element_subject, ...
+        report.attributed_via_element_subject, ...
         report.refused_no_donor, report.refused_no_subject, ...
-        report.refused_self_reference, report.refused_ambiguous_probe, ...
-        report.refused_ambiguous_observes);
+        report.refused_self_reference, report.refused_ambiguous_probe);
     if isempty(plan)
         return;
     end
@@ -2652,8 +2680,8 @@ function [convertResult, report] = resolveRecordingAttribution(convertResult, op
             continue;   % REVERT
         end
         replacedIds{end+1} = plan(k).source_id; %#ok<AGROW>
-        if plan(k).via_observes
-            report.attributed_via_observes_ids{end+1} = plan(k).source_id;
+        if plan(k).via_element_subject
+            report.attributed_via_element_subject_ids{end+1} = plan(k).source_id;
         end
         newDocs = [newDocs, sub.migrated]; %#ok<AGROW>
         report.observations_reattributed = ...
@@ -2678,38 +2706,41 @@ function [convertResult, report] = resolveRecordingAttribution(convertResult, op
     report.changed = true;
 end
 
-function [convertResult, report] = resolveObservesRetirement(convertResult, options, attributionReport)
-%RESOLVEOBSERVESRETIREMENT V_eta second pass: retire a device's loose `observes`
-%   relation where a converted stimulus presentation or bath manipulation
-%   names the same device as instrument and the same animal as entity, or,
-%   where no statement names the v1 subject, retire it and carry the subject
-%   in the run's migration report.
+function [convertResult, report] = resolveObservesRetirement(convertResult, options, attributionReport, v1ElementSubjects)
+%RESOLVEOBSERVESRETIREMENT V_eta second pass: carry the v1 subject of each
+%   element no statement gives it back for, and remove the `observes`
+%   relations pass 1 still wrote.
 %
-%   Decided by Jess Haley, 2026-11-17 [observes retires in the second pass]
-%   and 2026-11-19 [bath manipulation retires observes] (did-schema
-%   did_v2_go_forward_class_audit.md); 2026-11-19 [stimulator subject carried
-%   as needing information], [one-field carry in the migration report] and
-%   [recording probe subject carried the same way] (did-schema
-%   did_v2_standing_wiring_plan.md; carry register row carry-172).
+%   Decided by Jess Haley, 2026-11-26 [no observes relation in v2]
+%   (did-schema did_v2_standing_wiring_plan.md): v2 has no `observes`
+%   relation; NDI's second pass reads the v1 `subject_id` directly
+%   (V1ELEMENTSUBJECTS, ndi.migrate.internal.v1ElementSubjects); the animal
+%   is the `entity_id` of the observations and manipulations made with the
+%   element, or, where none names it, is carried as the element's subject
+%   ([stimulator subject carried as needing information], [one-field carry
+%   in the migration report], [recording probe subject carried the same
+%   way], 2026-11-19; carry register row carry-172).
 %   ndi.migrate.internal.observesRetirement decides (pure struct logic); this
 %   records each carried subject (did2.convert.carryElementSubject), removes
 %   the relations it names and prints every count, the denominators first.
-%   NDI's reader reads the subject back from the carried field
-%   (ndi.vintage.carriedSubjects), else from the presentations and baths
-%   (ndi.vintage.elementFields).
+%   NDI's reader reads the subject back from an observation made with the
+%   element, else the carried field (ndi.vintage.carriedSubjects), else the
+%   manipulations made with it (ndi.vintage.elementFields).
 %
 %   ATTRIBUTIONREPORT is resolveRecordingAttribution's report: an
-%   observation it re-attributed through a probe's own `observes` relation
-%   (a pyraview of a session never ingested, [preview attribution without
-%   epoch files]) is not the probe's recording observation, so the probe's
-%   `observes` retires with its subject carried ([recording probe subject
-%   carried the same way]); the re-attributed observation still names the
-%   subject.
+%   observation it re-attributed through a probe's v1 subject (a pyraview
+%   of a session never ingested, [preview attribution without epoch files])
+%   is not the probe's recording observation, so the probe's subject is
+%   carried ([recording probe subject carried the same way]); the
+%   re-attributed observation still names the subject.
     report = [];
     attributed = {};
     if nargin >= 3 && isstruct(attributionReport) ...
-            && isfield(attributionReport, 'attributed_via_observes_ids')
-        attributed = attributionReport.attributed_via_observes_ids;
+            && isfield(attributionReport, 'attributed_via_element_subject_ids')
+        attributed = attributionReport.attributed_via_element_subject_ids;
+    end
+    if nargin < 4 || ~isa(v1ElementSubjects, 'containers.Map')
+        v1ElementSubjects = containers.Map('KeyType', 'char', 'ValueType', 'char');
     end
     if ~strcmp(options.TargetVersion, 'did_v2')
         return;     % a presentation manipulation is a V_eta shape
@@ -2719,11 +2750,12 @@ function [convertResult, report] = resolveObservesRetirement(convertResult, opti
     for k = 1:numel(docs)
         structs{k} = docs{k}.toStruct();
     end
-    % a DID-matlab without the carried-field API keeps every relation that
-    % would need a carry (counted kept_no_carry_api)
+    % a DID-matlab without the carried-field API carries nothing (counted
+    % kept_no_carry_api, and those elements keep any pass-1 `observes`)
     canCarry = ~isempty(which('did2.convert.carryElementSubject'));
     [retireIds, report, carries] = ndi.migrate.internal.observesRetirement(structs, ...
-        'CanCarry', canCarry, 'AttributedViaObserves', attributed);
+        'ElementSubjects', v1ElementSubjects, 'CanCarry', canCarry, ...
+        'AttributedViaSubject', attributed);
     clear structs;
     report.removed = 0;
     report.carried_recorded = 0;
@@ -2733,28 +2765,29 @@ function [convertResult, report] = resolveObservesRetirement(convertResult, opti
             carries(k).subject_id, carries(k).reason);
         report.carried_recorded = report.carried_recorded + 1;
     end
-    fprintf(['OBSERVES RETIREMENT ([observes retires in the second pass], [bath manipulation ' ...
-        'retires observes], [one-field carry in the migration report])\n' ...
-        '  DENOMINATOR: %d migrated document(s); %d `observes` relation(s); ' ...
-        '%d stimulus presentation manipulation(s) naming %d instrument(s); ' ...
-        '%d bath manipulation(s) naming %d instrument(s); %d other manipulation(s); ' ...
-        '%d observation(s) with an instrument (%d of them attributed through `observes`)\n' ...
-        '  retired %d: by a presentation %d, by a bath %d, with the subject carried %d ' ...
-        '(other entities named %d, no statement %d; recorded %d)\n' ...
-        '  kept %d: presentations or baths name several entities %d, another ' ...
-        'manipulation names the subject %d, observations made with the device %d, ' ...
-        'device not a converted entity %d, no carried-field API %d, the device ' ...
-        'observes several parents %d, incomplete relation %d\n'], ...
-        report.documents_inspected, report.observes_seen, ...
+    fprintf(['ELEMENT SUBJECTS ([no observes relation in v2], [one-field carry in the ' ...
+        'migration report])\n' ...
+        '  DENOMINATOR: %d migrated document(s); %d v1 element(s) with a subject: ' ...
+        '%d converted, %d carried as v1; %d stimulus presentation manipulation(s) naming ' ...
+        '%d instrument(s); %d bath manipulation(s) naming %d instrument(s); %d other ' ...
+        'manipulation(s); %d observation(s) with an instrument (%d of them attributed ' ...
+        'through the v1 subject)\n' ...
+        '  named by a statement: an observation %d, presentations %d, baths %d, other ' ...
+        'manipulations %d\n' ...
+        '  carried %d (several entities named %d, other entities named %d, no statement ' ...
+        '%d; recorded %d); no carried-field API %d\n' ...
+        '  pass-1 `observes` relations %d: removed %d, kept %d (no v1 subject %d)\n'], ...
+        report.documents_inspected, report.elements_with_v1_subject, ...
+        report.elements_converted, report.elements_not_converted, ...
         report.presentation_manipulations, report.presentation_instruments, ...
         report.bath_manipulations, report.bath_instruments, report.other_manipulations, ...
-        report.observations_with_instrument, report.observations_attributed_via_observes, ...
-        report.observes_retired, report.retired_by_presentation, report.retired_by_bath, ...
-        report.retired_carried, report.carried_other_entity, report.carried_no_statement, ...
-        report.carried_recorded, ...
-        report.observes_kept, report.kept_several_entities, report.kept_other_manipulation, ...
-        report.kept_observation, report.kept_child_not_converted, report.kept_no_carry_api, ...
-        report.kept_several_observes, report.kept_incomplete);
+        report.observations_with_instrument, report.observations_attributed_via_subject, ...
+        report.named_by_observation, report.named_by_presentation, report.named_by_bath, ...
+        report.named_by_other_manipulation, ...
+        report.carried, report.carried_several_entities, report.carried_other_entity, ...
+        report.carried_no_statement, report.carried_recorded, report.kept_no_carry_api, ...
+        report.observes_seen, report.observes_removed, report.observes_kept, ...
+        report.observes_without_v1_subject);
     if isempty(retireIds)
         return;
     end

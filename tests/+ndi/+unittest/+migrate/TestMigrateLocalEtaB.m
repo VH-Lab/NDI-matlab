@@ -341,8 +341,10 @@ classdef TestMigrateLocalEtaB < matlab.unittest.TestCase
             r = ndi.unittest.migrate.verifyObservesRetirement(testCase, testCase.Result, 'B');
             testCase.verifyEqual(r.presentation_manipulations, 0, ...
                 'a B presentation converted with no clock to anchor it on');
-            testCase.verifyEqual(r.retired_by_presentation, 0, ...
-                'B retired an `observes` relation on a presentation it carried');
+            % [no observes relation in v2] (Jess Haley, 2026-11-26): no
+            % element's subject is read from a presentation it carried
+            testCase.verifyEqual(r.named_by_presentation, 0, ...
+                'B read an element''s subject from a presentation it carried');
         end
 
         function testACarriedSubjectReadsBackAsV1(testCase)
@@ -350,14 +352,14 @@ classdef TestMigrateLocalEtaB < matlab.unittest.TestCase
             % as needing information], [one-field carry in the migration
             % report], [recording probe subject carried the same way]
             % (did-schema did_v2_standing_wiring_plan.md; carry register row
-            % carry-172): an element whose `observes` retires because no
-            % statement names its v1 subject reads that subject back from
-            % the migration report's carried fields. B's count is printed
+            % carry-172) and [no observes relation in v2] (2026-11-26): an
+            % element whose statements do not give its v1 subject back reads
+            % that subject from the migration report's carried fields. B's count is printed
             % (0 included); each one carried is read back.
             r = ndi.unittest.migrate.verifyObservesRetirement(testCase, testCase.Result, 'B');
             n = ndi.unittest.migrate.verifyCarriedSubjects(testCase, testCase.Result, ...
                 testCase.Bodies, 'B');
-            testCase.verifyEqual(n, r.retired_carried, 'not every carried element was checked');
+            testCase.verifyEqual(n, r.carried, 'not every carried element was checked');
         end
 
         function testReadPhasesAreNoSlowerThanV1(testCase)

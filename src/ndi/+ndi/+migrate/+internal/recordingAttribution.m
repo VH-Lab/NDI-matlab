@@ -1,7 +1,8 @@
-function [plan, report] = recordingAttribution(structs)
+function [plan, report] = recordingAttribution(structs, options)
 %RECORDINGATTRIBUTION Re-attribute a raw recording to the SPECIMEN it came from.
 %
-%   [PLAN, REPORT] = RECORDINGATTRIBUTION(STRUCTS) finds migrated
+%   [PLAN, REPORT] = RECORDINGATTRIBUTION(STRUCTS, 'ElementSubjects', SUBJECTS)
+%   finds migrated
 %   modality observations (did-schema #88: an `observation` with a modality
 %   value kind, about its `entity_id`; before #88 a `<modality>_observation`
 %   about its `subject_id` -- both are read, and an edit keeps the spelling
@@ -90,6 +91,11 @@ function [plan, report] = recordingAttribution(structs)
 %   populated term would be this pass deciding a vocabulary question it has no
 %   standing to decide.
 %
+%   SUBJECTS (optional) is a containers.Map from a v1 element's id to its v1
+%   `depends_on subject_id` (ndi.migrate.internal.v1ElementSubjects of the
+%   migration input): where no recording observation is the donor, the
+%   element's v1 subject is (THE ELEMENT'S v1 SUBJECT, below).
+%
 %   STATUS: WRITTEN 2026-08-13 IN A CONTAINER WITH NO MATLAB. NOT EXECUTED HERE.
 %
 %   See also NDI.MIGRATE.INTERNAL.EPOCHANCHORFOLD,
@@ -97,10 +103,11 @@ function [plan, report] = recordingAttribution(structs)
 
 arguments
     structs cell
+    options.ElementSubjects = containers.Map('KeyType', 'char', 'ValueType', 'char')
 end
 
 plan = struct('source_id', {}, 'body', {}, 'specimen_id', {}, ...
-              'instrument_id', {}, 'via_observes', {});
+              'instrument_id', {}, 'via_element_subject', {});
 
 % RULE 5: every counter initialised BEFORE any early return, so a pass that
 % refuses everything reports the same shape as one that resolves everything. A
@@ -115,9 +122,8 @@ report = struct( ...
     'attributed',               0, ...
     'variable_carried',         0, ...
     'refused_no_donor',         0, ...
-    'observes_relations',       0, ...   % probe observes specimen, as kept
-    'attributed_via_observes',  0, ...   % no donor: the element's observes
-    'refused_ambiguous_observes', 0, ...
+    'element_subjects',         double(options.ElementSubjects.Count), ...   % v1 direct elements with a subject
+    'attributed_via_element_subject', 0, ...   % no donor: the element's v1 subject
     'refused_no_subject',       0, ...
     'refused_self_reference',   0, ...
     'refused_ambiguous_probe',  0, ...
@@ -134,30 +140,17 @@ donorVariable = containers.Map('KeyType', 'char', 'ValueType', 'any');
 ambiguous     = containers.Map('KeyType', 'char', 'ValueType', 'logical');
 candidates    = {};
 
-% THE ELEMENT'S OWN `observes` RELATION (probe observes specimen), which the
-% migration keeps. Decided by Jess Haley, 2026-10-21 [preview attribution
-% without epoch files] (did-schema V_eta_recording_observation_plan.md): when
-% a corpus has no epoch files, so no per-epoch recording observation exists to
-% be the donor, a pyraview's observation takes its specimen from here. A probe
-% observing two different specimens is ambiguous and refused.
-S = ndi.migrate.internal.etaShape;
-observesOf = containers.Map('KeyType', 'char', 'ValueType', 'char');
-observesAmbiguous = containers.Map('KeyType', 'char', 'ValueType', 'logical');
-for k = 1:numel(structs)
-    body = structs{k};
-    if ~strcmp(S.className(body), 'directed_relation') ...
-            || ~strcmp(S.relationName(body), 'observes')
-        continue;
-    end
-    [ch, pa] = S.relationEnds(body);
-    if isempty(ch) || isempty(pa); continue; end
-    report.observes_relations = report.observes_relations + 1;
-    if isKey(observesOf, ch) && ~strcmp(observesOf(ch), pa)
-        observesAmbiguous(ch) = true;
-    else
-        observesOf(ch) = pa;
-    end
-end
+% THE ELEMENT'S v1 SUBJECT. Decided by Jess Haley, 2026-10-21 [preview
+% attribution without epoch files] (did-schema
+% V_eta_recording_observation_plan.md): when a corpus has no epoch files, so
+% no per-epoch recording observation exists to be the donor, a pyraview's
+% observation takes its specimen from the element. That was the element's
+% `observes` relation until Jess Haley's decision of 2026-11-26 [no observes
+% relation in v2] (did-schema did_v2_standing_wiring_plan.md): v2 has no
+% `observes` relation, and NDI's second pass reads the v1 `subject_id`
+% directly (SUBJECTS; a v1 id with two subjects is not listed there,
+% ndi.migrate.internal.v1ElementSubjects).
+elementSubjectOf = options.ElementSubjects;
 
 for k = 1:numel(structs)
     body = structs{k};
@@ -201,17 +194,14 @@ for k = 1:numel(candidates)
         report.refused_ambiguous_probe = report.refused_ambiguous_probe + 1;
         continue;
     end
-    viaObserves = false;
+    viaSubject = false;
     if isKey(donorSpecimen, probeId)
         specimenId = donorSpecimen(probeId);
-    elseif isKey(observesAmbiguous, probeId)
-        report.refused_ambiguous_observes = report.refused_ambiguous_observes + 1;
-        continue;
-    elseif isKey(observesOf, probeId)
+    elseif isKey(elementSubjectOf, probeId)
         % no per-epoch recording observation names this probe (no epoch
-        % files): the element's kept `observes` relation is the donor
-        specimenId = observesOf(probeId);
-        viaObserves = true;
+        % files): the element's v1 subject is the donor
+        specimenId = elementSubjectOf(probeId);
+        viaSubject = true;
     else
         % The common, correct refusal: this observation's subject is not a probe
         % any signed emitter has attributed. Leaving it alone is right.
@@ -230,7 +220,7 @@ for k = 1:numel(candidates)
     % donor's term replaces the variable only when the observation's own
     % variable is EMPTY (no node and no name). A label (pyraview's signal
     % name, e.g. 'ctx_1') is a v1 value: it is kept, never overwritten.
-    if ~viaObserves && isUnresolvedVariable(out) && isempty(nameOf(getVariable(out)))
+    if ~viaSubject && isUnresolvedVariable(out) && isempty(nameOf(getVariable(out)))
         donorVar = donorVariable(probeId);
         if ~isempty(donorVar) && ~isempty(nodeOf(donorVar))
             out.(variableBlock(out)).variable = donorVar;
@@ -243,8 +233,8 @@ for k = 1:numel(candidates)
     % the v2 stamp (Jess Haley, 2026-10-25 [document stamps]: 'did_v2')
     out.document_class.schema_version = did2.schema.v2Stamp();
 
-    % VIA_OBSERVES: the specimen came from the probe's own `observes`
-    % relation, not from a recording observation. NDI's later
+    % VIA_ELEMENT_SUBJECT: the specimen came from the probe's v1 subject,
+    % not from a recording observation. NDI's later
     % ndi.migrate.internal.observesRetirement does not count such an
     % observation as the probe's recording observation ([recording probe
     % subject carried the same way], Jess Haley, 2026-11-19)
@@ -253,10 +243,10 @@ for k = 1:numel(candidates)
         'body',          out, ...
         'specimen_id',   specimenId, ...
         'instrument_id', probeId, ...
-        'via_observes',  viaObserves); %#ok<AGROW>
+        'via_element_subject', viaSubject); %#ok<AGROW>
     report.attributed = report.attributed + 1;
-    if viaObserves
-        report.attributed_via_observes = report.attributed_via_observes + 1;
+    if viaSubject
+        report.attributed_via_element_subject = report.attributed_via_element_subject + 1;
     end
 end
 

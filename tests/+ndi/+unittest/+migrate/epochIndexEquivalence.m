@@ -256,16 +256,23 @@ end
 
 function T = pickElementTargets(S, db)
 % one document of every kind an element's fields are read from: the
-% element entity, its class and type assertions, a derived_from and an
-% observes relation with it as child, an observation by it, its subject
+% element entity, its class and type assertions, a derived_from relation
+% with it as child, an observation by it, its subject, and a manipulation
+% made with it (no `observes` relation: [no observes relation in v2], Jess
+% Haley, 2026-11-26; the manipulations are read in its place,
+% ndi.vintage.subjectNamingManipulations)
 T = struct('element', '', 'class_assertion', '', 'type_assertion', '', ...
-    'derived_relation', '', 'observes_relation', '', 'observation', '', 'subject', '');
+    'derived_relation', '', 'observation', '', 'subject', '', 'manipulation', '');
 docs = ndi.vintage.elementSubjectDocs(S);
 for k = 1:numel(docs)
     id = char(docs{k}.document_properties.base.id);
     as = db.search(did2.query('', 'isa', 'assertion') & did2.query('', 'depends_on', 'entity_id', id));
     rel = db.search(did2.query('', 'isa', 'directed_relation') & did2.query('', 'depends_on', 'child_id', id));
     obs = db.searchIds(did2.query('', 'isa', 'observation') & did2.query('', 'depends_on', 'instrument_id', id));
+    man = db.searchIds(did2.query('', 'isa', 'manipulation') & did2.query('', 'depends_on', 'instrument_id', id));
+    if ~isempty(man) && isempty(T.manipulation)
+        T.manipulation = man{1};
+    end
     if isempty(T.element)
         T.element = id;
     end
@@ -292,8 +299,6 @@ for k = 1:numel(docs)
         end
         if contains(lower(n), 'derived') && isempty(T.derived_relation)
             T.derived_relation = char(s.base.id);
-        elseif contains(lower(n), 'observ') && isempty(T.observes_relation)
-            T.observes_relation = char(s.base.id);
         end
     end
     if ~isempty(obs) && isempty(T.observation)
