@@ -1,0 +1,382 @@
+name: V_eta read speed Soph (on-demand)
+
+# The read-speed check on the Soph corpus: did-schema
+# did_v2_go_forward_class_audit.md [read speed margin] (Jess Haley,
+# 2026-11-06) and [read speed check after getprobes] (2026-11-19;
+# VH-Lab/NDI-matlab#1266) put every read step of every corpus inside
+# 1.10 x v1 + 1 s, summed over the corpus's sessions. B and Dab run it inside
+# their end-to-end tests (test-eta-migrate-b.yml, test-eta-migrate-dab.yml),
+# 20211116 inside test-eta-migrate-e2e.yml.
+#
+# WHY SOPH IS SHARDED HERE. ndi.migrate.local over the whole of Soph (101,427
+# documents) took 16,051 s in run 44482411325 and 19,506 s in run 44606372766,
+# which was cancelled at the 6-hour hosted-runner limit before its read-back
+# finished. Reading every session a second time, v1 and v2, does not fit in
+# the same job. DID-matlab shards Soph for the same reason
+# (test-soph-corpus.yml, tools/shard_corpus.py), and this workflow uses that
+# tool at the resolved DID-matlab commit: whole sessions, sessions joined by a
+# depends_on kept together, each document in exactly one shard.
+#
+#   select   the shard count (6 unless a dispatch names another)
+#   shard    one job per shard: migrate the shard, read every session of it
+#            before and after (TestMigrateLocalEtaSophReadSpeed), upload the
+#            timings. Each shard asserts its denominators and that both sides
+#            return the same objects; its margin verdict is printed only.
+#   total    every shard's timings summed, and the margin applied to the
+#            corpus (TestMigrateLocalEtaSophReadSpeedTotal), the check B and
+#            Dab run. A missing shard fails it.
+#
+# Each shard's sessions are read in a database holding only that shard, on
+# both sides. Run alone and never on every push: it does not gate the fast
+# e2e check.
+
+on:
+  # Runs ONLY when its own files change (the two read-speed helpers included). workflow_dispatch below only becomes
+  # available once this file reaches the default branch (a GitHub
+  # constraint), so the scoped push is what runs it from a feature branch.
+  push:
+    paths:
+      - '.github/workflows/test-eta-read-speed-soph.yml'
+      - 'tests/*ndi/*unittest/*migrate/TestMigrateLocalEtaSophReadSpeed.m'
+      - 'tests/*ndi/*unittest/*migrate/TestMigrateLocalEtaSophReadSpeedTotal.m'
+      - 'tests/*ndi/*unittest/*migrate/readPhaseTimings.m'
+      - 'tests/*ndi/*unittest/*migrate/verifyReadPhases.m'
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'did-matlab / did-schema branch (V_eta line)'
+        required: false
+        default: ''
+        type: string
+      shards:
+        description: 'Number of whole-session shards'
+        required: false
+        default: '6'
+        type: string
+      profile:
+        description: 'profile the read phases (NDI_PROFILE_READS, report-only)'
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # false: a push queues behind a run in progress instead of cancelling it.
+  cancel-in-progress: false
+
+jobs:
+  select:
+    name: select shards
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.pick.outputs.matrix }}
+      n: ${{ steps.pick.outputs.n }}
+    steps:
+      - id: pick
+        shell: bash
+        env:
+          # A push carries no inputs: it shards too (one job does not fit).
+          RAW: ${{ inputs.shards || '6' }}
+        run: |
+          set -euo pipefail
+          case "$RAW" in
+            ''|*[!0-9]*) echo "::error::shards '$RAW' is not a whole number"; exit 1 ;;
+          esac
+          n=$((10#$RAW))
+          if [ "$n" -lt 1 ] || [ "$n" -gt 20 ]; then
+            echo "::error::shards must be 1..20, got $n"; exit 1
+          fi
+          m=$(python3 -c "import json,sys; print(json.dumps(list(range(int(sys.argv[1])))))" "$n")
+          echo "DENOMINATOR: $n shard(s) -> $m"
+          echo "matrix=$m" >> "$GITHUB_OUTPUT"
+          echo "n=$n" >> "$GITHUB_OUTPUT"
+
+  shard:
+    needs: select
+    name: Soph read speed shard ${{ matrix.shard }} of ${{ needs.select.outputs.n }}
+    runs-on: ubuntu-latest
+    strategy:
+      # Every shard reports, whatever another shard does.
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(needs.select.outputs.matrix) }}
+    # Under the 6-hour hosted-runner cap. A sixth of Soph migrates in about a
+    # sixth of the whole corpus's 16,051 to 19,506 s.
+    timeout-minutes: 350
+    env:
+      DID_MATLAB_REQUESTED: ${{ inputs.ref }}
+      NDI_PROFILE_READS: ${{ inputs.profile && '1' || '' }}
+      NDI_BRANCH: ${{ github.head_ref || github.ref_name }}
+      DID_SCHEMA_REQUESTED: ''
+    steps:
+      - name: Check out NDI-matlab
+        uses: actions/checkout@v4
+
+      - name: Resolve cross-repo refs (print them; fail if one is missing)
+        # A requested ref that does not exist must STOP the run, never fall back
+        # to a default branch: a run against the wrong did-schema / DID-matlab
+        # reads exactly like a run against the right one. Each ref is resolved
+        # to a commit here, the checkouts below use that commit, and the log
+        # says which commit every later step measured.
+        run: |
+          set -euo pipefail
+          resolve() {  # <owner/repo> <ref> <env var for the sha>
+            local sha
+            sha=$(git ls-remote "https://github.com/$1.git" "refs/heads/$2" "refs/tags/$2^{}" "refs/tags/$2" | head -1 | cut -f1)
+            if [ -z "$sha" ] && [[ "$2" =~ ^[0-9a-f]{40}$ ]]; then sha="$2"; fi
+            if [ -z "$sha" ]; then
+              echo "::error::$1 has no branch, tag or commit '$2'. Refusing to fall back to any other ref."
+              exit 1
+            fi
+            echo "RESOLVED: $1 @ $2 = $sha"
+            echo "$3=$sha" >> "$GITHUB_ENV"
+          }
+          # did-schema: the requested ref, else the did-schema branch with this
+          # NDI-matlab branch's name, else main ([NDI CI picks did-schema
+          # branch], Jess Haley, 2026-10-27), the same rule as DID-matlab below.
+          DID_SCHEMA_REF="${DID_SCHEMA_REQUESTED:-}"
+          if [ -z "$DID_SCHEMA_REF" ] && [ -n "${NDI_BRANCH:-}" ] && [ "$NDI_BRANCH" != "main" ] \
+             && [ -n "$(git ls-remote https://github.com/Waltham-Data-Science/did-schema.git "refs/heads/$NDI_BRANCH")" ]; then
+            DID_SCHEMA_REF="$NDI_BRANCH"
+          fi
+          DID_SCHEMA_REF="${DID_SCHEMA_REF:-main}"
+          echo "PICKED: did-schema ref $DID_SCHEMA_REF (requested '${DID_SCHEMA_REQUESTED:-}', NDI branch '${NDI_BRANCH:-}')"
+          echo "DID_SCHEMA_REF=$DID_SCHEMA_REF" >> "$GITHUB_ENV"
+          resolve Waltham-Data-Science/did-schema "$DID_SCHEMA_REF" DID_SCHEMA_SHA
+          # DID-matlab: the requested ref, else the DID-matlab branch with this
+          # NDI-matlab branch's name, else V2 ([NDI CI picks DID branch], Jess
+          # Haley, 2026-10-25), so a DID/NDI pair is tested together.
+          DID_MATLAB_REF="${DID_MATLAB_REQUESTED:-}"
+          if [ -z "$DID_MATLAB_REF" ] && [ -n "${NDI_BRANCH:-}" ] && [ "$NDI_BRANCH" != "main" ] \
+             && [ -n "$(git ls-remote https://github.com/VH-Lab/DID-matlab.git "refs/heads/$NDI_BRANCH")" ]; then
+            DID_MATLAB_REF="$NDI_BRANCH"
+          fi
+          DID_MATLAB_REF="${DID_MATLAB_REF:-V2}"
+          echo "PICKED: DID-matlab ref $DID_MATLAB_REF (requested '${DID_MATLAB_REQUESTED:-}', NDI branch '${NDI_BRANCH:-}')"
+          echo "DID_MATLAB_REF=$DID_MATLAB_REF" >> "$GITHUB_ENV"
+          resolve VH-Lab/DID-matlab "$DID_MATLAB_REF" DID_MATLAB_SHA
+
+      - name: Check out did-schema (for V_eta schemas)
+        uses: actions/checkout@v4
+        with:
+          repository: Waltham-Data-Science/did-schema
+          ref: ${{ env.DID_SCHEMA_SHA }}
+          path: did-schema
+
+      - name: Check out DID-matlab (the resolved commit; put ahead of MatBox's copy)
+        uses: actions/checkout@v4
+        with:
+          repository: VH-Lab/DID-matlab
+          ref: ${{ env.DID_MATLAB_SHA }}
+          path: did-matlab
+
+      - name: Print the checked-out cross-repo commits
+        run: |
+          set -euo pipefail
+          s=$(git -C did-schema rev-parse HEAD); d=$(git -C did-matlab rev-parse HEAD)
+          echo "CHECKED OUT: did-schema ${DID_SCHEMA_REF} = ${s}"
+          echo "CHECKED OUT: DID-matlab ${DID_MATLAB_REF} = ${d}"
+          [ "$s" = "$DID_SCHEMA_SHA" ] || { echo "::error::did-schema is at $s, resolved $DID_SCHEMA_SHA"; exit 1; }
+          [ "$d" = "$DID_MATLAB_SHA" ] || { echo "::error::DID-matlab is at $d, resolved $DID_MATLAB_SHA"; exit 1; }
+
+      - name: Assemble the did_v2 schema set (did-schema main, final classes only)
+        run: |
+          mkdir -p "${GITHUB_WORKSPACE}/eta-schemas"
+          # did-schema main's layout, final classes only (see the script's header):
+          # no stable/ draft/ deprecated/ tiers ([retired classes leave V2] step 2;
+          # a tier folder fails the step) and no retire class from retiring/ ([one
+          # folder, final classes only]: no document is passed through under one).
+          bash .github/scripts/assemble_did_schema_set.sh did-schema "${GITHUB_WORKSPACE}/eta-schemas"
+
+      - name: Export env (schema path + eta test gate)
+        run: |
+          echo "DID_SCHEMA_PATH=${GITHUB_WORKSPACE}/eta-schemas" >> "$GITHUB_ENV"
+          echo "NDI_TEST_ETA=1" >> "$GITHUB_ENV"
+
+      - name: Start virtual display server
+        run: |
+          sudo apt-get install -y xvfb
+          Xvfb :99 &
+          echo "DISPLAY=:99" >> "$GITHUB_ENV"
+
+      - name: Set up MATLAB
+        uses: matlab-actions/setup-matlab@v2
+        with:
+          release: latest
+          cache: true
+          products: |
+            Statistics_and_Machine_Learning_Toolbox
+
+      - name: Install MatBox
+        env:
+          # MatBox resolves its dependencies through the GitHub API.
+          # UNAUTHENTICATED that is 60 requests/hour per runner IP, so this step
+          # fails on `rate limit exceeded` (403) in a way indistinguishable from
+          # a real dependency break -- run 32545423486 died here on
+          # vhlab-library-matlab's getDefaultBranch. secrets.GITHUB_TOKEN is
+          # minted per run, needs no setup, and raises the limit to 1000/hour.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: ehennestad/matbox-actions/install-matbox@v1
+
+      - name: Point requirements at the DID-matlab V_eta branch
+        # requirements.txt pins a DID-matlab that predates +migrators_j /
+        # TargetVersion. Rewrite it to the DID-matlab V2 line so v1_to_v2
+        # accepts TargetVersion='did_v2'.
+        run: |
+          set -eux
+          python3 - <<'PY'
+          import os, pathlib
+          ref = os.environ["DID_MATLAB_REF"]
+          for rel in ("requirements.txt", "tests/requirements.txt"):
+              p = pathlib.Path(rel)
+              if not p.exists():
+                  continue
+              out = []
+              for line in p.read_text().splitlines():
+                  if "DID-matlab" in line:
+                      out.append(line.split("@", 1)[0] + "@" + ref)
+                  else:
+                      out.append(line)
+              p.write_text("\n".join(out) + "\n")
+          PY
+          grep -i did-matlab requirements.txt tests/requirements.txt || true
+
+      - name: Install repo dependencies (DID-matlab@V_eta, mksqlite, vhlab-toolbox)
+        env:
+          # Same rate-limit fix as Install MatBox above: installRequirements
+          # resolves every dependency (DID-matlab, mksqlite, vhlab-toolbox,
+          # vhlab-library) through the GitHub API, so it needs the token to stay
+          # under the 1000/hour authenticated limit rather than the 60/hour IP one.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: matlab-actions/run-command@v2
+        with:
+          command: |
+            addpath(genpath("src"));
+            addpath(genpath("tools"));
+            matbox.installRequirements(nditools.projectdir());
+            matbox.installRequirements(fullfile(pwd, "tests"));
+
+      - name: Add a swapfile (memory exhaustion becomes slowness)
+        # The #88-pipeline Soph runs lost their runner ("The runner has received
+        # a shutdown signal") at a consistent work point inside
+        # ndi.migrate.local, which fits the VM running out of memory. A swapfile
+        # turns that into slowness the 350-minute timeout can show (copied from
+        # test-eta-migrate-soph.yml; a shard holds less). GUARDED: it goes on whichever of / and /mnt has the most
+        # free space, only if 20 GB stay free for the corpus and the migrated
+        # database after it, and a failure here never fails the job.
+        continue-on-error: true
+        run: |
+          set -x
+          free -m || true
+          swapon --show || true
+          df -h / /mnt || true
+          best=""; bestAvail=0
+          for d in /mnt /; do
+            a=$(df --output=avail -BG "$d" 2>/dev/null | tail -1 | tr -dc 0-9)
+            if [ -n "$a" ] && [ "$a" -gt "$bestAvail" ]; then best="$d"; bestAvail="$a"; fi
+          done
+          size=$(( bestAvail - 20 )); [ "$size" -gt 16 ] && size=16
+          if [ -z "$best" ] || [ "$size" -lt 4 ]; then
+            echo "SWAP: not added (most free space ${bestAvail} GB on '${best}'; keeping 20 GB free)"
+            exit 0
+          fi
+          f="${best%/}/soph-swapfile"
+          if sudo fallocate -l "${size}G" "$f" && sudo chmod 600 "$f" && sudo mkswap "$f" && sudo swapon "$f"; then
+            echo "SWAP: added ${size} GB at $f"
+          else
+            echo "SWAP: adding ${size} GB at $f FAILED; continuing without it"
+          fi
+          free -m || true
+          swapon --show || true
+
+      - name: Cut Soph into whole-session shards (this job's shard)
+        # The zip the Soph test reads, cut by DID-matlab's tool at the resolved
+        # DID-matlab commit; the tool prints the corpus, every shard's load and
+        # what this shard holds, and fails on an empty shard.
+        env:
+          SHARD: ${{ matrix.shard }}
+          NSHARDS: ${{ needs.select.outputs.n }}
+        run: |
+          set -euo pipefail
+          src="$RUNNER_TEMP/corpus-src"
+          out="$RUNNER_TEMP/corpus-shard"
+          mkdir -p "$src"
+          curl -sSfL -o "$src/Soph.zip" \
+            "https://ndi-programming-development.s3.us-east-1.amazonaws.com/Soph.zip"
+          unzip -q "$src/Soph.zip" -d "$src"
+          python3 -I did-matlab/tools/shard_corpus.py --corpus Soph --src "$src/Soph" \
+              --out "$out" --shards "$NSHARDS" --index "$SHARD"
+          rm -rf "$src"
+          echo "NDI_SOPH_SHARD_DIR=$out" >> "$GITHUB_ENV"
+          echo "NDI_READ_SPEED_REPORT=$RUNNER_TEMP/read-speed/soph-shard-$SHARD-of-$NSHARDS.json" >> "$GITHUB_ENV"
+
+      - name: Run the Soph read-speed test on this shard
+        uses: matlab-actions/run-command@v2
+        with:
+          command: |
+            addpath(genpath("src"));
+            addpath(genpath("tests"));
+            % THE RESOLVED DID-matlab, ahead of whatever MatBox installed, and
+            % proven: the run stops if did2 resolves anywhere else.
+            addpath(genpath(fullfile(pwd, "did-matlab", "src")));
+            didWhere = string(which("did2.convert.v1_to_v2"));
+            disp("DID-matlab " + string(getenv("DID_MATLAB_REF")) + " @ " + string(getenv("DID_MATLAB_SHA")) + " from " + didWhere);
+            assert(startsWith(didWhere, string(fullfile(pwd, "did-matlab"))), "did2 does not resolve to the checked-out DID-matlab: " + didWhere);
+            results = runtests('ndi.unittest.migrate.TestMigrateLocalEtaSophReadSpeed');
+            disp(results);
+            fprintf("VERDICT: %d test(s), %d passed, %d failed, %d incomplete\n", ...
+                numel(results), nnz([results.Passed]), nnz([results.Failed]), ...
+                nnz([results.Incomplete]));
+            assertSuccess(results);
+
+      - name: Upload this shard's timings
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: soph-read-speed-shard-${{ matrix.shard }}-of-${{ needs.select.outputs.n }}
+          path: ${{ runner.temp }}/read-speed/
+          if-no-files-found: warn
+
+  total:
+    needs: [select, shard]
+    # Runs when a shard failed too: it reports every shard that measured, and
+    # fails on the ones that did not.
+    if: ${{ always() && needs.select.result == 'success' }}
+    name: Soph read speed, the whole corpus
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out NDI-matlab
+        uses: actions/checkout@v4
+
+      - name: Download every shard's timings
+        uses: actions/download-artifact@v4
+        with:
+          pattern: soph-read-speed-shard-*
+          path: ${{ runner.temp }}/read-speed
+
+      - name: List the shard reports
+        run: |
+          set -euo pipefail
+          find "$RUNNER_TEMP/read-speed" -name '*.json' | sort
+          echo "DENOMINATOR: $(find "$RUNNER_TEMP/read-speed" -name '*.json' | wc -l) report(s) for ${{ needs.select.outputs.n }} shard(s)"
+          echo "NDI_SOPH_READ_SPEED_REPORTS=$RUNNER_TEMP/read-speed" >> "$GITHUB_ENV"
+
+      - name: Set up MATLAB
+        uses: matlab-actions/setup-matlab@v2
+        with:
+          release: latest
+          cache: true
+
+      - name: Apply the margin to the corpus
+        uses: matlab-actions/run-command@v2
+        with:
+          command: |
+            addpath(genpath("src"));
+            addpath(genpath("tests"));
+            results = runtests('ndi.unittest.migrate.TestMigrateLocalEtaSophReadSpeedTotal');
+            disp(results);
+            fprintf("VERDICT: %d test(s), %d passed, %d failed, %d incomplete\n", ...
+                numel(results), nnz([results.Passed]), nnz([results.Failed]), ...
+                nnz([results.Incomplete]));
+            assertSuccess(results);
