@@ -1,12 +1,12 @@
-# Dabrowska (Dab) V2 migration — decision log
+# Dabrowska (Dab) v2 migration — decision log
 
 The record of the choices made for the Dabrowska dataset (corpus `Dab`) on its
-way to V2 (V_eta), kept beside the importer the way
+way to v2 (V_eta), kept beside the importer the way
 `../+haley/import_V2_decisions.md` is kept beside the Haley importer. The
 existing `doImport.m` is left unchanged. The migration itself is
 `ndi.migrate.local`; the code that carries these decisions is the Dabrowska
 dataset map, `ndi.setup.conv.dabrowska.applyMap` (planner
-`ndi.setup.conv.dabrowska.sliceTetanus`), applied to the migrated V2 database
+`ndi.setup.conv.dabrowska.sliceTetanus`), applied to the migrated v2 database
 after the generic migration (moved out of `local.m`'s second pass by
 [sliceTetanus to Dab map], Jess Haley, 2026-10-25), tested by `TestSliceTetanus` (real Dab documents) and
 `TestMigrateLocalEtaDab` (Dabrowska's documents in the Dab corpus zip; the zip also carries corpus B, which `TestMigrateLocalEtaB` reads).

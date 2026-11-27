@@ -15,7 +15,9 @@ function key = ingestedStimulusLogKey(epochId, readerId)
 %   `evmktx_group1_seg.nbf_1` and `channel_list.bin`, read by
 %   ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2) become a data body
 %   of that epoch's stimulus-presentation manipulation; where the epoch has
-%   no presentation, an observation of the stimulus rig's device owns them.
+%   no presentation, a manipulation of the epoch's subject owns them, the
+%   stimulator its instrument (amended 2026-11-25 [stimulus log fallback is
+%   a manipulation]; before, an observation of the stimulus rig's device).
 %   The archive document then goes.
 %
 %   WHY A KEY. A presentation names no acquisition system, so the readers'

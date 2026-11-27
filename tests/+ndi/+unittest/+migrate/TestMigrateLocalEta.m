@@ -352,6 +352,45 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
             end
         end
 
+        function testABathWithNoClockRecordIsCarriedAsV1(testCase)
+            % [one-reading quick answers] Q2 and [no invented values] (Jess
+            % Haley, 2026-10-26, did-schema did_v2_go_forward_class_audit.md;
+            % built 2026-11-26, audit batch 2 (b)): "a bath epoch with no
+            % clock record, is carried as v1 instead of defaulting to
+            % `dev_local_time`". The fixture of testStimulusBathResolvesToDose
+            % (the control, which converts) without the stimulator's
+            % element_epoch: the bath is stored whole as v1, citing carry-157,
+            % and no bath manipulation is written.
+            stimId  = 'aabb1122ccdd3344_5500000000000002';
+            subjId  = 'aabb1122ccdd3344_5500000000000001';
+            sessId  = 'aabb1122ccdd3344_5500000000000005';
+            epochId = 'epoch_t00001';
+            bath = makeStimulusBath(stimId, epochId);
+            bodies = { ...
+                jsonencode(makeSessionDoc(sessId)), ...
+                jsonencode(makeSubject(subjId)), ...
+                jsonencode(makeStimulatorElement(stimId, subjId)), ...
+                jsonencode(bath)};
+            result = runMigrate(testCase, bodies);
+            assertNoDeferral(testCase, result);
+            verifyEqual(testCase, result.references.orphan_count, 0, ...
+                ['the graph does not close. ' resultDiag(result)]);
+            r = result.secondPass.deferred;
+            verifyEqual(testCase, r.deferred_seen, 1, ['the denominator. ' resultDiag(result)]);
+            verifyEqual(testCase, r.baths_carried_no_clock, 1);
+            verifyEqual(testCase, r.baths_carried_unread_unit, 0);
+            verifyEqual(testCase, {r.carry_rows.id}, {bath.base.id});
+            verifyEqual(testCase, {r.carry_rows.row}, {'carry-157'});
+            d = findById(result.destination, bath.base.id);
+            verifyNotEmpty(testCase, d, resultDiag(result));
+            if ~isempty(d)
+                verifyEqual(testCase, d.document_class.class_name, 'stimulus_bath');
+                verifyEqual(testCase, char(d.document_class.schema_version), 'did_v1');
+            end
+            verifyFalse(testCase, isfield(result.summary.by_class, 'formulation'), ...
+                ['a bath formulation was written. ' resultDiag(result)]);
+        end
+
         function testStimulusBathResolvesToDose(testCase)
             % did-schema #88 (VH-Lab/did-schema#88): the bath is a `manipulation`
             % whose value kind is `formulation`, about the specimen by
@@ -942,9 +981,69 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
             % the stimulator's clock for that epoch (the element_epoch above)
             ndi.unittest.migrate.verifyClock(testCase, ref.relative_time_reference.value.clock, ...
                 'dev_local_time');   % by node [clock terms get nodes]
+            % read from the clock record, first in the order (Jess Haley,
+            % 2026-11-26, "Build it that way")
+            r = result.secondPass.stimulusSequence;
+            verifyEqual(testCase, r.epoch_clock_from_record, 1, resultDiag(result));
+            verifyEqual(testCase, r.epoch_clock_from_file, 0);
+            verifyEqual(testCase, r.epoch_clock_none, 0);
 
             verifyEqual(testCase, result.references.orphan_count, 0, ...
                 ['the graph does not close. ' resultDiag(result)]);
+        end
+
+        function testAPresentationTakesItsClockFromItsPresentationTimeFile(testCase)
+            % Decided by Jess Haley, 2026-11-26 ("Build it that way", on
+            % VH-Lab/NDI-matlab#1309): with no element_epoch or
+            % epochclocktimes for the stimulator's epoch, the presentation's
+            % clock is the `clocktype` v1 wrote in its own
+            % presentation_time.bin (+ndi/+app/+stimulus/decoder.m), and the
+            % manipulation stays on that clock. The file here, written by the
+            % v1 writer's own function into the store, says dev_global_time;
+            % the epoch is minted from the recording element's element_epoch,
+            % and the stimulator has none.
+            [result, presId] = runFileClockPresentation(testCase, true);
+            r = result.secondPass.stimulusSequence;
+            verifyEqual(testCase, r.presentations_read, 1, resultDiag(result));
+            verifyEqual(testCase, r.epoch_clock_from_record, 0, resultDiag(result));
+            verifyEqual(testCase, r.epoch_clock_from_file, 1, resultDiag(result));
+            verifyEqual(testCase, r.epoch_clock_none, 0, resultDiag(result));
+            verifyEqual(testCase, r.epoch_carried.total, 0, resultDiag(result));
+            manip = findById(result.destination, presId);
+            verifyNotEmpty(testCase, manip, resultDiag(result));
+            if isempty(manip); return; end
+            verifyEqual(testCase, manip.document_class.class_name, 'manipulation');
+            ref = findById(result.destination, depValue(manip, 'time_reference_id'));
+            verifyNotEmpty(testCase, ref, resultDiag(result));
+            if isempty(ref); return; end
+            ndi.unittest.migrate.verifyClock(testCase, ref.relative_time_reference.value.clock, ...
+                'dev_global_time');
+            verifyEqual(testCase, result.references.orphan_count, 0, resultDiag(result));
+        end
+
+        function testAPresentationWithNoClockAnywhereIsCarriedAsV1(testCase)
+            % the same presentation with no presentation_time.bin in the
+            % store and no clock document: nothing gives its clock, and none
+            % is assumed, so it is carried whole as v1 with carry-109
+            % (reason no_clock_record) (Jess Haley, 2026-11-26)
+            [result, presId] = runFileClockPresentation(testCase, false);
+            r = result.secondPass.stimulusSequence;
+            verifyEqual(testCase, r.presentations_read, 1, resultDiag(result));
+            verifyEqual(testCase, r.epoch_clock_none, 1, resultDiag(result));
+            verifyEqual(testCase, r.epoch_clock_from_file, 0, resultDiag(result));
+            verifyEqual(testCase, r.epoch_carried.no_clock_record, 1, resultDiag(result));
+            verifyEqual(testCase, r.epoch_carried.total, 1, resultDiag(result));
+            rows = r.carry_rows;
+            hit = strcmp({rows.id}, presId);
+            verifyEqual(testCase, sum(hit), 1, 'the carried presentation has no register row');
+            if any(hit)
+                verifyEqual(testCase, rows(find(hit, 1)).row, 'carry-109');
+            end
+            doc = findById(result.destination, presId);
+            verifyNotEmpty(testCase, doc, resultDiag(result));
+            if isempty(doc); return; end
+            verifyEqual(testCase, doc.document_class.class_name, 'stimulus_presentation');
+            verifyEqual(testCase, char(doc.document_class.schema_version), 'did_v1');
         end
 
         function testAPresentationWhoseEpochIsNotMintedIsCarriedAsV1(testCase)
@@ -1085,6 +1184,45 @@ result = ndi.migrate.local(testCase.SessionRoot, ...
     'Validate', true, 'TargetVersion', 'did_v2', 'Backup', false);
 [~, dstName] = fileparts(result.destination);
 verifyEqual(testCase, dstName, 'did_v2');
+end
+
+function [result, presId] = runFileClockPresentation(testCase, withFile)
+%RUNFILECLOCKPRESENTATION A presentation in epoch t00001 whose stimulator has
+%   no element_epoch (the recording element's mints the epoch), with or
+%   without its presentation_time.bin (clocktype dev_global_time) in the store.
+subjId  = 'aabb1122ccdd3344_5500000000000030';
+recElem = 'aabb1122ccdd3344_5500000000000031';
+stimEl  = 'aabb1122ccdd3344_5500000000000032';
+presId  = 'aabb1122ccdd3344_5500000000000033';
+respId  = 'aabb1122ccdd3344_5500000000000034';
+uid = 'aabb1122ccdd3344_77000000000000b1';
+pres = makeStimulusPresentation(presId, stimEl);
+pres.stimulus_presentation = rmfield(pres.stimulus_presentation, 'presentation_time');
+pres.document_class.superclasses = [pres.document_class.superclasses, ...
+    struct('class_name', 'epochid', 'class_version', '1.0.0')];
+pres.epochid = struct('epochid', 't00001');
+pres.files = struct('file_list', {{'presentation_time.bin'}}, ...
+    'file_info', struct('name', 'presentation_time.bin', ...
+    'locations', struct('delete_original', 1, 'uid', uid, ...
+    'location', '/a/path/on/the/author/computer/tmp456', ...
+    'parameters', '', 'location_type', 'file', 'ingest', 1)));
+if withFile
+    storeDir = fullfile(testCase.SessionRoot, '.ndi', 'files');
+    if ~isfolder(storeDir); mkdir(storeDir); end
+    pt = struct('clocktype', {'dev_global_time', 'dev_global_time'}, ...
+        'stimopen', {0.5, 6.5}, 'onset', {1, 7}, 'offset', {3, 9}, ...
+        'stimclose', {3.5, 9.5}, 'stimevents', {[1 1; 3 2], [7 1; 9 2]});
+    ndi.database.fun.write_presentation_time_structure(fullfile(storeDir, uid), pt);
+end
+bodies = { ...
+    jsonencode(makeSessionDoc(session())), ...
+    jsonencode(makeSubject(subjId)), ...
+    jsonencode(makeRecordingElement(recElem, subjId)), ...
+    jsonencode(makeStimulatorElement(stimEl, subjId)), ...
+    jsonencode(makeElementEpoch(recElem, 't00001', 'dev_local_time')), ...
+    jsonencode(makeStimulusResponse(respId, presId, recElem)), ...
+    jsonencode(pres)};
+result = runMigrate(testCase, bodies);
 end
 
 function assertNoDeferral(testCase, result)

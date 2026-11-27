@@ -302,6 +302,7 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             testCase.verifyEqual(rep.archives_converted, 1, rep.first_unconvertible_reason);
             testCase.verifyEqual(rep.event_archives_kept, 1);
             testCase.verifyEqual(rep.event_kept_unwired, 1, rep.first_event_kept_reason);
+            testCase.verifyEqual(rep.event_channels_rig_device, 0, 'no rig device to fall back to');
             testCase.verifyEqual(rep.event_bodies_left, 1);
             testCase.verifyFalse(ismember('body_ev', removed));
             testCase.verifyFalse(ismember('body_cl', removed), ...
@@ -969,6 +970,59 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             testCase.verifyEqual(numel(dir(fullfile(testCase.Dir, 'files'))) - 2, nFiles);
         end
 
+        function testTimeChannelsOutOfOrderAreMalformed(testCase)
+            % Decided by Jess Haley, 2026-11-25 [time channels out of order
+            % are malformed] (did-schema did_v2_standing_wiring_plan.md): "an
+            % ingested archive whose channel list does not give its time
+            % channels in increasing number (NDI's v1 writer always does, and
+            % its readers take the time file's columns in that order) is
+            % malformed: it is kept unchanged as v1, and the migration report
+            % names it as malformed with the order found"
+            [structs, v1] = testCase.splitTimeGroup(struct('timeOrder', [2 1]));
+            nFiles = numel(dir(fullfile(testCase.Dir, 'files'))) - 2;
+            [out, rep, removed] = ndi.migrate.internal.ingestedArchiveBodies( ...
+                structs, testCase.Dir, v1);
+            testCase.verifyEqual(rep.archives_seen, 1, 'the denominator');
+            testCase.verifyEqual(rep.archives_converted, 0);
+            testCase.verifyEqual(rep.unconvertible, 1);
+            testCase.verifyEqual(rep.time_channels_out_of_order_kept, 1, ...
+                rep.first_unconvertible_reason);
+            testCase.verifyEqual(rep.uneven_time_groups_split, 0);
+            testCase.verifyEmpty(rep.uneven_time_kept, 'counted as a pairing problem');
+            testCase.verifyEmpty(removed);
+            testCase.verifyEqual(out, structs, 'kept as pass 1 wrote it');
+            testCase.verifyEqual(numel(dir(fullfile(testCase.Dir, 'files'))) - 2, nFiles, ...
+                'no file written');
+            testCase.assertNumElements(rep.malformed, 1);
+            m = rep.malformed{1};
+            testCase.verifyEqual(m.kind, 'time_channels_out_of_order');
+            testCase.verifyEqual(m.archive_id, 'arch_1', 'the archive is named');
+            testCase.verifyEqual(m.time_body_id, 'body_ti');
+            testCase.verifyEqual(m.order, [2 1], 'the order found');
+            testCase.verifySubstring(m.reason, 'malformed');
+            testCase.verifySubstring(m.reason, 't2, t1');
+            testCase.verifySubstring(m.reason, 'kept as v1');
+            % [malformed cases cite carry-120] (Jess Haley, 2026-11-26,
+            % did-schema did_v2_go_forward_class_audit.md): the report cites
+            % carry-120 [values no writer produces are malformed]
+            testCase.verifyEqual(m.row, 'carry-120');
+            testCase.verifyTrue(startsWith(m.reason, '[carry-120] malformed'), m.reason);
+            testCase.verifyEqual(rep.first_malformed_reason, m.reason);
+            testCase.verifyEqual(rep.first_unconvertible_reason, m.reason);
+        end
+
+        function testTimeChannelsInOrderAreNotMalformed(testCase)
+            % the control: the same archive with the list as NDI's writer
+            % gives it is split, and nothing is named malformed
+            [structs, v1] = testCase.splitTimeGroup(struct('timeOrder', [1 2]));
+            [~, rep] = ndi.migrate.internal.ingestedArchiveBodies(structs, testCase.Dir, v1);
+            testCase.verifyEqual(rep.archives_seen, 1, 'the denominator');
+            testCase.verifyEqual(rep.archives_converted, 1, rep.first_unconvertible_reason);
+            testCase.verifyEqual(rep.time_channels_out_of_order_kept, 0);
+            testCase.verifyEmpty(rep.malformed);
+            testCase.verifyEmpty(rep.first_malformed_reason);
+        end
+
         function testAnEvenlySpacedTimeGroupOfSeveralChannelsIsNotSplit(testCase)
             % the control: both time channels of the group evenly spaced, so
             % the group adds nothing the groups' time covariates do not say
@@ -999,6 +1053,244 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             testCase.verifyEqual(rep.bytes_not_here, 1);
             testCase.verifyEmpty(removed);
             testCase.verifyEqual(out, structs, 'nothing changed');
+        end
+
+        function testCompressionBlockIsReadFromTheSegmentHeaders(testCase)
+            % [ingested compression settings], amended by [compression
+            % settings without bit size] (Jess Haley, 2026-11-01 and
+            % 2026-11-19): the scheme's term and one Data Type parameter
+            % from each segment's NDI-compress header, no bit size. The
+            % fixture writes the analog segments as int16 (compress_ephys,
+            % 16 bits, signed) and the uneven time segments with
+            % compress_time; the unpacked event bodies are the control:
+            % uncompressed, so no block ([unpacked event bodies are
+            % uncompressed]), as before
+            o = struct('events', true, 'wired', true);
+            [structs, v1] = testCase.archive(true, false, 0, o);
+            [out, rep, removed] = ndi.migrate.internal.ingestedArchiveBodies( ...
+                structs, testCase.Dir, v1);
+            testCase.verifyEqual(rep.archives_converted, 1, rep.first_unconvertible_reason);
+            testCase.verifyEqual(rep.compression_bodies_seen, 2, ...
+                'the denominator: the channel group and the time value''s body');
+            testCase.verifyEqual(rep.compression_written, 2, rep.first_compression_kept_reason);
+            testCase.verifyEqual(rep.compression_kept, 0);
+            b = out{cellfun(@(x) strcmp(x.base.id, 'body_ai'), out)};
+            [term, params] = compressionOf(b);
+            testCase.verifyEqual(term, {'EMPTY:0000452', 'NDI ephys compression'});
+            testCase.verifyEqual(params, {'NCIT:C42645', 'int16'}, 'one parameter, Data Type');
+            tb = out{cellfun(@(x) strcmp(x.base.id, 'body_ti'), out)};
+            [term, params] = compressionOf(tb);
+            testCase.verifyEqual(term, {'EMPTY:0000455', 'NDI time compression'});
+            testCase.verifyEqual(params, {'NCIT:C42645', 'float64'});
+            % the control: the unpacked event channels' bodies have none
+            added = out(numel(structs) + 1:end);
+            E = ndi.vintage.ingestedEventChannels(added, added);
+            testCase.assertEqual(numel(E), 2, rep.first_event_kept_reason);
+            testCase.verifyFalse(isfield(E(1).times.data_body, 'compression') && ...
+                ~isempty(E(1).times.data_body.compression), 'an event body has no block');
+            keep = ~cellfun(@(x) any(strcmp(x.base.id, removed)), out);
+            res = did2.convert.v1_to_v2(out(keep), 'Validate', true, 'TargetVersion', 'did_v2');
+            testCase.verifyEmpty(res.quarantine);
+        end
+
+        function testSegmentsDisagreeingOnFormatAreMalformed(testCase)
+            % [segments disagreeing on format are malformed] (Jess Haley,
+            % 2026-11-26, did-schema did_v2_go_forward_class_audit.md): a
+            % body whose NDI-compress segments disagree on encode method or
+            % format is malformed: carried as v1, citing carry-120, counted.
+            % Here segment 1 is compress_digital (method 21, uint8) and
+            % segment 2 compress_ephys (method 1, int16)
+            o = struct('firstSegmentDigital', true);
+            [structs, v1] = testCase.archive(false, true, 0, o);
+            nFiles = numel(dir(fullfile(testCase.Dir, 'files'))) - 2;
+            [out, rep, removed] = ndi.migrate.internal.ingestedArchiveBodies( ...
+                structs, testCase.Dir, v1);
+            testCase.verifyEqual(rep.archives_seen, 1, 'the denominator');
+            testCase.verifyEqual(rep.archives_converted, 0);
+            testCase.verifyEqual(rep.unconvertible, 1);
+            testCase.verifyEqual(rep.compression_segments_disagree_kept, 1, ...
+                rep.first_unconvertible_reason);
+            testCase.verifyEqual(rep.compression_kept, 0, 'not pass 1''s block kept');
+            testCase.verifyEqual(rep.compression_written, 0);
+            testCase.verifyEmpty(removed);
+            testCase.verifyEqual(out, structs, 'kept as pass 1 wrote it');
+            testCase.verifyEqual(numel(dir(fullfile(testCase.Dir, 'files'))) - 2, nFiles, ...
+                'no file left written');
+            testCase.assertNumElements(rep.malformed, 1);
+            m = rep.malformed{1};
+            testCase.verifyEqual(m.kind, 'compression_segments_disagree');
+            testCase.verifyEqual(m.archive_id, 'arch_1', 'the archive is named');
+            testCase.verifyEqual(m.body_id, 'body_ai');
+            testCase.verifyEqual(m.row, 'carry-120');
+            testCase.verifyTrue(startsWith(m.reason, '[carry-120] malformed'), m.reason);
+            testCase.verifySubstring(m.reason, 'disagree');
+            testCase.verifySubstring(m.reason, 'kept as v1');
+            testCase.verifyEqual(rep.first_malformed_reason, m.reason);
+            testCase.verifyEqual(rep.first_unconvertible_reason, m.reason);
+        end
+
+        function testSegmentsAgreeingOnFormatGetTheBlock(testCase)
+            % the control: the same archive with both segments from
+            % compress_ephys gets the block, and nothing is malformed
+            [structs, v1] = testCase.archive(false, true, 0);
+            [out, rep] = ndi.migrate.internal.ingestedArchiveBodies(structs, testCase.Dir, v1);
+            testCase.verifyEqual(rep.archives_seen, 1, 'the denominator');
+            testCase.verifyEqual(rep.archives_converted, 1, rep.first_unconvertible_reason);
+            testCase.verifyEqual(rep.compression_bodies_seen, 1);
+            testCase.verifyEqual(rep.compression_written, 1, rep.first_compression_kept_reason);
+            testCase.verifyEqual(rep.compression_segments_disagree_kept, 0);
+            testCase.verifyEmpty(rep.malformed);
+            b = out{cellfun(@(x) strcmp(x.base.id, 'body_ai'), out)};
+            [term, params] = compressionOf(b);
+            testCase.verifyEqual(term, {'EMPTY:0000452', 'NDI ephys compression'});
+            testCase.verifyEqual(params, {'NCIT:C42645', 'int16'});
+        end
+
+        function testDigitalCompressionBlockAndBytesNotHere(testCase)
+            % [compression settings without bit size]: a digital group's
+            % segments (compress_digital: 8 channels per uint8) name the
+            % digital scheme; the control, an archive whose bytes are not
+            % here, is left as before and inspects no header
+            o = struct('prefix', 'di', 'scale', 1);
+            [structs, v1] = testCase.archive(false, true, 0, o);
+            [out, rep] = ndi.migrate.internal.ingestedArchiveBodies(structs, testCase.Dir, v1);
+            testCase.verifyEqual(rep.archives_converted, 1, rep.first_unconvertible_reason);
+            testCase.verifyEqual(rep.compression_bodies_seen, 1, 'the denominator');
+            testCase.verifyEqual(rep.compression_written, 1, rep.first_compression_kept_reason);
+            [term, params] = compressionOf(out{2});
+            testCase.verifyEqual(term, {'EMPTY:0000453', 'NDI digital compression'});
+            testCase.verifyEqual(params, {'NCIT:C42645', 'uint8'});
+            delete(fullfile(testCase.Dir, 'files', 'u_ai_1'));
+            [out2, rep2] = ndi.migrate.internal.ingestedArchiveBodies(structs, testCase.Dir, v1);
+            testCase.verifyEqual(rep2.bytes_not_here, 1);
+            testCase.verifyEqual(rep2.compression_bodies_seen, 0);
+            testCase.verifyEqual(out2, structs, 'nothing changed');
+        end
+
+        function testUnwiredEventsFallBackToTheRigsDevice(testCase)
+            % [event channel observes its wired device] (Jess Haley,
+            % 2026-11-17): "a channel with no wiring relation falls back to
+            % the acquisition system as its entity, counted"; the
+            % acquisition system as an entity is its `device_id` (DID-matlab
+            % #498 mints it). testUnwiredEventsAreLeftPacked is the control:
+            % a system that names no device leaves the file packed, as before
+            o = struct('events', true, 'wired', false, 'rigDevice', true);
+            [structs, v1] = testCase.archive(false, true, 0, o);
+            [out, rep, removed] = ndi.migrate.internal.ingestedArchiveBodies( ...
+                structs, testCase.Dir, v1);
+            testCase.verifyEqual(rep.event_channels_seen, 2, 'the denominator');
+            testCase.verifyEqual(rep.event_archives_unpacked, 1, rep.first_event_kept_reason);
+            testCase.verifyEqual(rep.event_channels_unpacked, 2);
+            testCase.verifyEqual(rep.event_channels_rig_device, 2, 'counted');
+            testCase.verifyEqual(rep.event_kept_unwired, 0);
+            testCase.verifyTrue(ismember('body_ev', removed));
+            added = out(numel(structs) + 1:end);
+            E = ndi.vintage.ingestedEventChannels(added, added);
+            testCase.assertEqual(numel(E), 2);
+            ids = cellfun(@(d) d.base.id, added, 'UniformOutput', false);
+            for k = 1:2
+                obs = added{strcmp(ids, E(k).statement_id)};
+                testCase.verifyEqual(edgeOf(obs, 'entity_id'), {'dev_1'}, 'the rig''s device');
+                testCase.verifyEqual(edgeOf(obs, 'acquisition_system_id'), {'sys_1'});
+            end
+            % the fixture's acquisition system is a stub: validated without it
+            keep = ~cellfun(@(x) any(strcmp(x.base.id, [removed, {'sys_1'}])), out);
+            res = did2.convert.v1_to_v2(out(keep), 'Validate', true, 'TargetVersion', 'did_v2');
+            testCase.verifyEmpty(res.quarantine);
+        end
+
+        function testEventsWiredToSeveralDevicesObserveTheRigsDevice(testCase)
+            % [event channel on several devices observes the rig] (Jess
+            % Haley, 2026-11-26): a channel the `connected to` wiring names
+            % for several devices (stim_1 and stim_2) is an observation of
+            % the rig's device, the system's `device_id`, counted
+            o = struct('events', true, 'wired', true, 'secondDevice', true, 'rigDevice', true);
+            [structs, v1] = testCase.archive(false, true, 0, o);
+            [out, rep, removed] = ndi.migrate.internal.ingestedArchiveBodies( ...
+                structs, testCase.Dir, v1);
+            testCase.verifyEqual(rep.event_channels_seen, 2, 'the denominator');
+            testCase.verifyEqual(rep.event_archives_unpacked, 1, rep.first_event_kept_reason);
+            testCase.verifyEqual(rep.event_channels_unpacked, 2);
+            testCase.verifyEqual(rep.event_channels_rig_device_several, 2, 'counted');
+            testCase.verifyEqual(rep.event_channels_rig_device, 0, 'wired, not the unwired fallback');
+            testCase.verifyEqual(rep.event_kept_several_devices, 0);
+            testCase.verifyTrue(ismember('body_ev', removed));
+            added = out(numel(structs) + 1:end);
+            E = ndi.vintage.ingestedEventChannels(added, added);
+            testCase.assertEqual(numel(E), 2);
+            ids = cellfun(@(d) d.base.id, added, 'UniformOutput', false);
+            for k = 1:2
+                obs = added{strcmp(ids, E(k).statement_id)};
+                testCase.verifyEqual(edgeOf(obs, 'entity_id'), {'dev_1'}, 'the rig''s device');
+                testCase.verifyEqual(edgeOf(obs, 'acquisition_system_id'), {'sys_1'});
+            end
+        end
+
+        function testEventsWiredToOneDeviceObserveThatDevice(testCase)
+            % the control: with the rig's device named, a channel the wiring
+            % names for one device (stim_1) still observes that device
+            o = struct('events', true, 'wired', true, 'rigDevice', true);
+            [structs, v1] = testCase.archive(false, true, 0, o);
+            [out, rep] = ndi.migrate.internal.ingestedArchiveBodies(structs, testCase.Dir, v1);
+            testCase.verifyEqual(rep.event_channels_seen, 2, 'the denominator');
+            testCase.verifyEqual(rep.event_archives_unpacked, 1, rep.first_event_kept_reason);
+            testCase.verifyEqual(rep.event_channels_rig_device_several, 0);
+            testCase.verifyEqual(rep.event_channels_rig_device, 0);
+            added = out(numel(structs) + 1:end);
+            E = ndi.vintage.ingestedEventChannels(added, added);
+            testCase.assertEqual(numel(E), 2);
+            ids = cellfun(@(d) d.base.id, added, 'UniformOutput', false);
+            for k = 1:2
+                obs = added{strcmp(ids, E(k).statement_id)};
+                testCase.verifyEqual(edgeOf(obs, 'entity_id'), {'stim_1'}, 'the wired device');
+            end
+        end
+
+        function testEventsWiredToSeveralDevicesWithNoRigDeviceStayPacked(testCase)
+            % the control: a system that names no device (`device_id`) has
+            % no rig device to fall back to, so the file stays, counted
+            o = struct('events', true, 'wired', true, 'secondDevice', true);
+            [~, rep, removed] = testCase.convertArchive(false, true, 0, o);
+            testCase.verifyEqual(rep.event_archives_kept, 1);
+            testCase.verifyEqual(rep.event_kept_several_devices, 1, rep.first_event_kept_reason);
+            testCase.verifyEqual(rep.event_kept_unwired, 0);
+            testCase.verifyEqual(rep.event_channels_rig_device, 0);
+            testCase.verifyEqual(rep.event_channels_rig_device_several, 0);
+            testCase.verifyFalse(ismember('body_ev', removed));
+        end
+
+        function testAGroupWithItsOwnOwnerIsConvertedWithItsArchive(testCase)
+            % [non-specimen channel groups get their own owner] (Jess Haley,
+            % 2026-11-17; DID-matlab #515): a digital group is owned by its
+            % own `logical` observation on the same acquisition system, the
+            % channel list by the recording observation; the archive is the
+            % bodies of one epoch on one system, so it converts as one and
+            % the group keeps its owner
+            o = struct('prefix', 'di', 'scale', 1, 'groupOwner', 'sys_1');
+            [structs, v1] = testCase.archive(false, true, 0, o);
+            [out, rep, removed] = ndi.migrate.internal.ingestedArchiveBodies( ...
+                structs, testCase.Dir, v1);
+            testCase.verifyEqual(rep.documents_inspected, numel(structs), 'the denominator');
+            testCase.verifyEqual(rep.archives_seen, 1, 'one archive, not one per owner');
+            testCase.verifyEqual(rep.channel_list_missing, 0);
+            testCase.verifyEqual(rep.archives_converted, 1, rep.first_unconvertible_reason);
+            b = out{cellfun(@(x) strcmp(x.base.id, 'body_ai'), out)};
+            testCase.verifyEqual(b.document_class.class_name, 'sampled_body');
+            testCase.verifyEqual(edgeOf(b, 'owner_id'), {'own_1'}, 'its own owner, kept');
+            testCase.verifyEqual(rep.channel_list_removed + rep.channel_list_kept, 1, ...
+                'the archive''s one channel list, read with its group');
+            keep = ~cellfun(@(x) any(strcmp(x.base.id, removed)), out);
+            res = did2.convert.v1_to_v2(out(keep), 'Validate', true, 'TargetVersion', 'did_v2');
+            testCase.verifyEmpty(res.quarantine);
+            % the control: an owner that names no acquisition system keys
+            % the body by its owners, as before, so the group is apart from
+            % its channel list
+            o.groupOwner = '';
+            [~, rep2] = testCase.convertArchive(false, true, 0, o);
+            testCase.verifyEqual(rep2.archives_seen, 1);
+            testCase.verifyEqual(rep2.archives_no_channel_group, 1, 'the channel list alone');
+            testCase.verifyEqual(rep2.channel_list_missing, 1);
+            testCase.verifyEqual(rep2.archives_converted, 0);
         end
 
         function testAStimulusLogIsLeftAndCounted(testCase)
@@ -1113,8 +1405,11 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             % timed by t1, 2 auxiliary inputs at 10 kHz timed by t2. O.t0: the
             % epoch's start (0); O.axTimeChannel: the auxiliary rows' v1
             % time_channel ([2 2]); O.axN: the auxiliary samples (160);
-            % O.even: both time channels evenly spaced (false)
+            % O.even: both time channels evenly spaced (false);
+            % O.timeOrder: the order the channel list gives t1 and t2 in
+            % ([1 2], as NDI's writer sorts them; [2 1] is no list NDI writes)
             if ~isfield(o, 't0'); o.t0 = 0; end
+            if ~isfield(o, 'timeOrder'); o.timeOrder = [1 2]; end
             if ~isfield(o, 'axTimeChannel'); o.axTimeChannel = [2 2]; end
             if ~isfield(o, 'axN'); o.axN = 160; end
             if ~isfield(o, 'even'); o.even = false; end
@@ -1128,8 +1423,20 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
                 'offset', {-2, -2, -2, 0, 0, 0, 0}, ...
                 'scale', {0.195, 0.195, 0.195, 3.74e-05, 3.74e-05, 1, 1});
             ec = ndi.file.type.mfdaq_epoch_channel(ch);
-            [ok, msg] = ec.writeToFile(fullfile(files, 'u_cl'));
-            testCase.assertTrue(logical(ok), msg);
+            if isequal(o.timeOrder, [1 2])
+                [ok, msg] = ec.writeToFile(fullfile(files, 'u_cl'));
+                testCase.assertTrue(logical(ok), msg);
+            else
+                % the writer sorts by number (create_properties), so a list
+                % out of order is written row by row, as a malformed source
+                ci = ec.channel_information;
+                tr = find(strcmp({ci.type}, 'time'));
+                ci(tr) = ci(tr(o.timeOrder));
+                vlt.file.saveStructArray(fullfile(files, 'u_cl'), ci);
+                got = ndi.file.type.mfdaq_epoch_channel(fullfile(files, 'u_cl')).channel_information;
+                testCase.assertEqual([got(strcmp({got.type}, 'time')).number], o.timeOrder, ...
+                    'premise: the list gives the time channels in the order asked');
+            end
             ai = int16(round(1000 * sin((1:160)' * [0.05 0.11 0.23])));
             ax = int16(round(800 * cos((1:o.axN)' * [0.07 0.13])));
             segs = {ai(1:100, :), ai(101:160, :), ax(1:100, :), ax(101:end, :)};
@@ -1190,7 +1497,9 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             % text channel tx3 in the events file too (entries O.entries),
             % wired with the others unless O.wireText is false;
             % O.timeRowTimeChannel and O.timeRowOffset, the v1 time row
-            % t1's time_channel (NaN) and offset (0)
+            % t1's time_channel (NaN) and offset (0); O.firstSegmentDigital,
+            % the first analog segment written by compress_digital instead
+            % (its header disagrees with the second's on method and format)
             if nargin < 4; t0 = 0; end
             if nargin < 5; o = struct(); end
             if ~isfield(o, 'prefix'); o.prefix = 'ai'; end
@@ -1238,7 +1547,8 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             segs = {data(1:100, :), data(101:160, :)};
             for k = 1:2
                 stem = tempname();
-                if strcmp(o.prefix, 'di')
+                if strcmp(o.prefix, 'di') || (k == 1 && isfield(o, 'firstSegmentDigital') ...
+                        && o.firstSegmentDigital)
                     ndi.compress.compress_digital(double(segs{k} > 0), stem);
                 else
                     ndi.compress.compress_ephys(double(segs{k}), 16, stem, ...
@@ -1250,9 +1560,19 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             uids = {'u_cl', 'u_ai_1', 'u_ai_2'};
             t = [];
             obs = owner();
+            groupOwnerId = 'obs_1';
+            if isfield(o, 'groupOwner')
+                % [non-specimen channel groups get their own owner]: the
+                % group's own observation, on the system O.groupOwner ('' :
+                % it names none)
+                groupOwnerId = 'own_1';
+            end
             s = {obs, ...
-                body('body_ai', [o.prefix '_group1_seg.nbf_#'], {'u_ai_1', 'u_ai_2'}), ...
+                body('body_ai', [o.prefix '_group1_seg.nbf_#'], {'u_ai_1', 'u_ai_2'}, groupOwnerId), ...
                 body('body_cl', 'channel_list.bin', {'u_cl'})};
+            if isfield(o, 'groupOwner')
+                s{end+1} = groupOwner('own_1', o.groupOwner);
+            end
             if o.events
                 % as ndi.daq.reader.mfdaq/ingest_epochfiles writes the file:
                 % times on the epoch's clock (from T0)
@@ -1283,6 +1603,15 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
                 end
                 s{end+1} = body('body_ev', 'evmktx_group1_seg.nbf_#', {'u_ev'});
                 uids{end+1} = 'u_ev';
+                if isfield(o, 'rigDevice') && o.rigDevice
+                    % the system names its rig's device dev_1 (DID-matlab
+                    % #498), and no relation wires the channels
+                    s{end+1} = rigSystem('sys_1', 'dev_1');
+                end
+                if isfield(o, 'secondDevice') && o.secondDevice
+                    % a second device wired to the same channels
+                    s{end+1} = wiring(false, 'sys_1', 'stim_2', 'rel_2');
+                end
                 if o.wired && isfield(o, 'wiredToDevice') && o.wiredToDevice
                     % [acquisition system is a device entity] (Jess Haley
                     % 2026-11-19): the wiring names the rig's device dev_1,
@@ -1388,14 +1717,17 @@ obs = did2.build.statement('observation', 'el_1', ...
     'SessionId', 'sess_1', 'Validate', false, 'ValueKind', 'time');
 end
 
-function rel = wiring(withText, parent)
+function rel = wiring(withText, parent, child, id)
 % the stimulator stim_1 `connected to` the system sys_1 on e1 and mk2 (and,
 % WITHTEXT, tx3), as did2.convert.resolveEpochProbemap mkWiring writes it;
 % PARENT (default sys_1) is what the relation names as the rig: the system,
 % as migrated before, or the rig's device entity ([acquisition system is a
-% device entity], Jess Haley 2026-11-19)
+% device entity], Jess Haley 2026-11-19); CHILD (stim_1) the device wired,
+% ID (rel_1) the relation's id
 if nargin < 1; withText = false; end
 if nargin < 2; parent = 'sys_1'; end
+if nargin < 3; child = 'stim_1'; end
+if nargin < 4; id = 'rel_1'; end
 prev = did2.schema.cache.strictMode('TermRegistry', false);
 c = onCleanup(@() did2.schema.cache.strictMode('TermRegistry', prev));
 conds = {did2.build.condition(struct('node', 'EMPTY:0000376', 'name', 'event channel'), 'Matrix', 1), ...
@@ -1403,11 +1735,42 @@ conds = {did2.build.condition(struct('node', 'EMPTY:0000376', 'name', 'event cha
 if withText
     conds{end+1} = did2.build.condition(struct('node', 'EMPTY:0000410', 'name', 'text channel'), 'Matrix', 3);
 end
-rel = did2.build.directedRelation('stim_1', parent, ...
+rel = did2.build.directedRelation(child, parent, ...
     struct('node', 'RO:0002170', 'name', 'connected to'), ...
     'TimeReferenceIds', {'tr_1'}, ...
     'Fields', struct('conditions', {did2.build.list(conds{:})}), ...
-    'Id', 'rel_1', 'SessionId', 'sess_1', 'Validate', false);
+    'Id', id, 'SessionId', 'sess_1', 'Validate', false);
+end
+
+function obs = groupOwner(id, sysId)
+% a digital group's own `logical` observation, as DID-matlab #515's
+% groupOwner writes it: entity the rig's device, variable the group's
+% channel-type term, the system named by `acquisition_system_id` (none when
+% SYSID is '')
+prev = did2.schema.cache.strictMode('TermRegistry', false);
+c = onCleanup(@() did2.schema.cache.strictMode('TermRegistry', prev));
+sysArg = {};
+if ~isempty(sysId); sysArg = {'AcquisitionSystemId', sysId}; end
+obs = did2.build.statement('observation', 'dev_1', ...
+    struct('node', 'EMPTY:0000372', 'name', 'digital input channel'), [], ...
+    'DataBody', true, 'TimeReferenceIds', {'tr_1'}, 'Id', id, sysArg{:}, ...
+    'SessionId', 'sess_1', 'Validate', false, 'ValueKind', 'logical');
+end
+
+function [term, params] = compressionOf(b)
+% a body's compression block: TERM {node, name}; PARAMS {variable node,
+% text} per parameter, flattened
+term = {};
+params = {};
+if ~isfield(b.data_body, 'compression') || ~isstruct(b.data_body.compression); return; end
+cb = b.data_body.compression;
+term = {char(cb.term.node), char(cb.term.name)};
+if ~isfield(cb, 'parameters'); return; end
+ps = cb.parameters;
+if isstruct(ps); ps = num2cell(ps); end
+for k = 1:numel(ps)
+    params = [params, {char(ps{k}.variable.node), char(ps{k}.text)}]; %#ok<AGROW>
+end
 end
 
 function sys = rigSystem(id, deviceId)
@@ -1435,9 +1798,11 @@ x = fread(fid, Inf, 'float64');
 fclose(fid);
 end
 
-function b = body(id, filename, uids)
-% as did2.convert.resolveEpochProbemap's archiveBodies writes it
-b = did2.build.opaqueBody({'obs_1'}, struct('node', 'EDAM:format_2333', ...
+function b = body(id, filename, uids, ownerId)
+% as did2.convert.resolveEpochProbemap's archiveBodies writes it, owned by
+% OWNERID (obs_1)
+if nargin < 4; ownerId = 'obs_1'; end
+b = did2.build.opaqueBody({ownerId}, struct('node', 'EDAM:format_2333', ...
     'name', 'Binary format'), 'Chunks', numel(uids), ...
     'Fields', struct('filename', filename), ...
     'Notes', sprintf(['The ingested recording of epoch e1: v1 attached ' ...

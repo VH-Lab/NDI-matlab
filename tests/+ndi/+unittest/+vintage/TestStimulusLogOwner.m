@@ -7,7 +7,10 @@ classdef TestStimulusLogOwner < matlab.unittest.TestCase
 %   `evmktx_group1_seg.nbf_1` and `channel_list.bin` (read by
 %   ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2), become a data body
 %   of that epoch's stimulus-presentation manipulation; where the epoch has
-%   no presentation, an observation of the stimulus rig's device owns them.
+%   no presentation, a manipulation of the epoch's subject owns them, the
+%   stimulator its instrument and NCIT:C41210 "Stimulus" its variable
+%   (amended 2026-11-25 [stimulus log fallback is a manipulation]; before,
+%   an observation of the stimulus rig's device).
 %   The archive document then goes. NDI reads them first ("siblings first").
 %
 %   THE FIXTURE is one v2 session (ndi.setup.V2.createSession), two epochs
@@ -19,9 +22,10 @@ classdef TestStimulusLogOwner < matlab.unittest.TestCase
 %     epoch_s1   the log's two files are opaque bodies of a presentation
 %                manipulation (no acquisition system named), their notes
 %                opening with ndi.vintage.ingestedStimulusLogKey
-%     epoch_s10  the log is owned by the fallback observation: it names the
-%                stimulus system and its clock reference ([non-specimen
-%                channel groups get their own owner])
+%     epoch_s10  the log is owned by the fallback manipulation of the
+%                epoch's subject, as DID-matlab writes it ([stimulus log
+%                fallback is a manipulation]): it names the stimulus system
+%                and its clock reference
 %   The epoch ids are chosen so one is a prefix of the other.
 %
 %   WHAT "THE SAME EVENTS AS THE V1 ARCHIVE" MEANS HERE. With the v1
@@ -131,12 +135,14 @@ classdef TestStimulusLogOwner < matlab.unittest.TestCase
                         'TimeReferenceIds', {during.base.id}, S{:}, 'ValueKind', 'velocity');
                     ev = testCase.Files.ev1;
                 else
-                    % the fallback observation of the rig's device
-                    owner = did2.build.statement('observation', 'device_test', ...
-                        T('PATO:0000008'), [], 'DataBody', true, ...
-                        'AcquisitionSystemId', stimSys.base.id, 'InstrumentId', stimSys.base.id, ...
+                    % the fallback manipulation of the epoch's subject, the
+                    % stimulator its instrument ([stimulus log fallback is a
+                    % manipulation], Jess Haley, 2026-11-25)
+                    owner = did2.build.statement('manipulation', 'subject_test', ...
+                        T('NCIT:C41210'), [], 'DataBody', true, ...
+                        'AcquisitionSystemId', stimSys.base.id, 'InstrumentId', 'stimulator_test', ...
                         'TimeReferenceIds', {during.base.id, stimClock.base.id}, S{:}, ...
-                        'ValueKind', 'velocity');
+                        'ValueKind', 'time');
                     ev = testCase.Files.ev10;
                 end
                 docs = [docs, {owner, ...
@@ -211,6 +217,31 @@ classdef TestStimulusLogOwner < matlab.unittest.TestCase
             B = ndi.vintage.ingestedArchive(testCase.Session, testCase.readerId(), 'epoch_s10');
             got = testCase.bytesOf(B, 'evmktx_group1_seg.nbf_1');
             testCase.verifyEqual(got, testCase.bytesOfFile(testCase.Files.ev10));
+        end
+
+        function testTheFallbackOwnerIsAManipulationOfTheSubject(testCase)
+            % [stimulus log fallback is a manipulation] (Jess Haley,
+            % 2026-11-25): epoch_s10's log is owned by a manipulation of the
+            % subject, the stimulator its instrument and NCIT:C41210 its
+            % variable, and is found by its key all the same
+            M = ndi.vintage.ingestedStimulusLogBodies(testCase.Session, ...
+                testCase.readerId(), {'epoch_s10'});
+            testCase.assertTrue(isKey(M, 'epoch_s10'), 'the log was not found');
+            bodies = M('epoch_s10');
+            testCase.verifyNumElements(bodies, 2, 'the event file and the channel list');
+            owners = {};
+            for k = 1:numel(bodies)
+                owners = [owners, ndi.v2.edgeIds(ndi.v2.props(bodies{k}), 'owner_id')]; %#ok<AGROW>
+            end
+            owners = unique(owners);
+            testCase.assertNumElements(owners, 1, 'one owner for the log');
+            hit = testCase.Session.database_search(ndi.query('base.id', 'exact_string', owners{1}, ''));
+            testCase.assertNumElements(hit, 1);
+            p = ndi.v2.props(hit{1});
+            testCase.verifyEqual(char(p.document_class.class_name), 'manipulation');
+            testCase.verifyEqual(char(p.statement.variable.node), 'NCIT:C41210');
+            testCase.verifyEqual(ndi.v2.edgeIds(p, 'entity_id'), {'subject_test'});
+            testCase.verifyEqual(ndi.v2.edgeIds(p, 'instrument_id'), {'stimulator_test'});
         end
 
         function testAnotherReaderReadsNoLog(testCase)

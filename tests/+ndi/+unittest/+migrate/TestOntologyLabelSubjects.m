@@ -3,9 +3,17 @@ classdef TestOntologyLabelSubjects < matlab.unittest.TestCase
 %   resolver. Pure struct logic: no database, no schema, no converter.
 %
 %   ndi.migrate.internal.ontologyLabelSubjects follows a passed-through
-%   `ontology_label`'s ONE edge through the migrated-id graph -- the hop a
-%   single-document migrator cannot see -- and returns a ready `term_observation`
-%   body per resolvable label, plus an instrument REPORT.
+%   `ontologyLabel`'s ONE edge through the migrated-id graph -- the hop a
+%   single-document migrator cannot see -- and names the carry register row
+%   every label is carried under, in an instrument REPORT. Since Jess Haley's
+%   decision of 2026-11-26 (audit batch 2 (a), applying [labels are a field
+%   on what they label] and [one-reading quick answers] Q3, did-schema
+%   did_v2_go_forward_class_audit.md) it converts NO label: a label whose
+%   target has a subject and a time, which it used to write as a term
+%   observation (variable 'label'), is carried as v1 under carry-096
+%   (needs_mapping). The tests that pinned that observation's body are
+%   inverted below to pin the carry; the malformed rows (carry-097, carry-100)
+%   are the controls, still checked first.
 %
 %   ---------------------------------------------------------------------
 %   THE SPLIT THESE TESTS EXIST TO PIN
@@ -40,24 +48,25 @@ classdef TestOntologyLabelSubjects < matlab.unittest.TestCase
 
     methods (Test)
 
-        function testTheSameInputMintsTheSameIds(tc)
+        function testTheSameInputGivesTheSameRowsAndMintsNothing(tc)
             % [migration reliability practices] (b) (Jess Haley, 2026-10-26,
-            % did-schema did_v2_go_forward_class_audit.md): a document the
-            % migration mints gets an id derived from its source, "so two runs
-            % on the same input are identical and can be diffed". The ids must
-            % not depend on the order the documents are read in either
-            % (NDI-matlab #1235: database order is not data), so the input is
-            % also run reversed. NEW is the ids the pass minted (not one of
-            % its input ids): it must be non-empty, or this proves nothing.
+            % did-schema did_v2_go_forward_class_audit.md): "two runs on the
+            % same input are identical and can be diffed", in any read order
+            % (NDI-matlab #1235: database order is not data). Since 2026-11-26
+            % (audit batch 2 (a)) the pass mints nothing at all: every label
+            % is carried, so the plan holds no id, and the rows it names are
+            % the same whichever order the batch is read in.
             batch = { ...
                 imageObservation('img_1', 'sess1', 'subj_group_9', 'anchor_1'), ...
-                labelBody('lab_1', 'sess1', 'img_1', 'EMPTY:0000131') };
-            ids = planIds(ndi.migrate.internal.ontologyLabelSubjects(batch));
-            new = setdiff(ids, ndi.unittest.migrate.mintedIdSet(batch));
-            tc.verifyNotEmpty(new, 'the pass minted no new id');
-            tc.verifyEqual(planIds(ndi.migrate.internal.ontologyLabelSubjects(batch)), ids);
-            tc.verifyEqual(planIds(ndi.migrate.internal.ontologyLabelSubjects( ...
-                batch(end:-1:1))), ids);
+                labelBody('lab_1', 'sess1', 'img_1', 'EMPTY:0000131'), ...
+                imageStackPassthrough('img_2', 'sess2', 'platerow_5'), ...
+                labelBody('lab_2', 'sess2', 'img_2', 'EMPTY:0000132') };
+            [plan, rep] = ndi.migrate.internal.ontologyLabelSubjects(batch);
+            tc.verifyEmpty(planIds(plan), 'the pass minted an id');
+            tc.verifyNumElements(rep.carry_rows, 2, 'the denominator: two labels, two rows');
+            [plan2, rep2] = ndi.migrate.internal.ontologyLabelSubjects(batch(end:-1:1));
+            tc.verifyEmpty(planIds(plan2));
+            tc.verifyEqual(sortedRows(rep2), sortedRows(rep));
         end
 
         function testDenominatorIsStatedEvenWithNothingToDo(tc)
@@ -71,80 +80,43 @@ classdef TestOntologyLabelSubjects < matlab.unittest.TestCase
             tc.verifyFalse(rep.changed);
         end
 
-        function testTheBehaviourHalfResolvesThroughTheImageObservation(tc)
+        function testALabelOnAStatementWithASubjectAndATimeIsCarried(tc)
+            % THE CARRIED CASE. Jess Haley, 2026-11-26 (audit batch 2 (a),
+            % "Ok to all three"): [labels are a field on what they label] and
+            % [one-reading quick answers] Q3 -- a label whose target HAS a
+            % subject and a time is carried whole as v1, needs_mapping, not
+            % written as a term observation of that subject (variable
+            % 'label'). Until then this exact batch gave one plan entry.
             batch = { ...
                 imageObservation('img_1', 'sess1', 'subj_group_9', 'anchor_1'), ...
                 labelBody('lab_1', 'sess1', 'img_1', 'EMPTY:0000131') };
             [plan, rep] = ndi.migrate.internal.ontologyLabelSubjects(batch);
+            tc.verifyEqual(rep.documents_inspected, 2, 'the denominator');
             tc.verifyEqual(rep.labels_passthrough, 1);
-            tc.verifyEqual(rep.resolved, 1);
-            tc.verifyEqual(rep.blocked_target_has_no_subject, 0);
-            tc.verifyEqual(numel(plan), 1);
-            tc.verifyEqual(plan(1).subject_id, 'subj_group_9');
-            tc.verifyEqual(plan(1).statement_id, 'img_1');
-            tc.verifyTrue(rep.changed);
+            tc.verifyEqual(rep.statements_indexed, 1, 'the target was read as a statement');
+            tc.verifyEmpty(plan, 'no observation is written');
+            tc.verifyEqual(rep.resolved, 0);
+            tc.verifyFalse(rep.changed);
+            tc.verifyEqual(rep.carried_target_has_subject_and_time, 1);
+            tc.verifyEqual(rep.blocked_target_has_no_subject, 0, 'not the E. coli bucket');
+            tc.verifyEqual(rep.unresolved_target_no_time_reference, 0);
+            tc.assertNumElements(rep.carry_rows, 1);
+            tc.verifyEqual(rep.carry_rows(1).id, 'lab_1', 'the label itself is carried');
+            tc.verifyEqual(rep.carry_rows(1).row, 'carry-096');
         end
 
-        function testTheEmittedBodyIsATermObservationThatKeepsBothFacts(tc)
-            % BOTH facts: the term, and what it was about. The old behaviour kept
-            % the first and discarded the second, which is why it was graded
-            % benign for so long -- the surviving half looked right.
+        function testACarriedLabelNamesItsTargetAsItsDependency(tc)
+            % The carry-096 row names the labelled document, as the two older
+            % carry-096 sites do: when the target is itself carried as v1 the
+            % final stamp counts the label under carry-064 ([dependents of a
+            % carried document carry]), which is how all 7,007 JH labels are
+            % counted today (their imageStacks are carried).
             batch = { ...
                 imageObservation('img_1', 'sess1', 'subj_group_9', 'anchor_1'), ...
                 labelBody('lab_1', 'sess1', 'img_1', 'EMPTY:0000131') };
-            plan = ndi.migrate.internal.ontologyLabelSubjects(batch);
-            b = plan(1).body;
-
-            % did-schema #88: the `observation` direction + the `term` kind
-            tc.verifyEqual(b.document_class.class_name, 'observation');
-            tc.verifyEqual(b.document_class.schema_version, 'did_v2');
-            tc.verifyEqual({b.document_class.superclasses.class_name}, ...
-                {'interaction', 'statement', 'base', 'term', 'value', 'data'});
-
-            % the term, verbatim -- and `name` left EMPTY rather than guessed:
-            % the v1 document stores only the node.
-            tc.verifyEqual(b.term.value.node, 'EMPTY:0000131');
-            tc.verifyEqual(b.term.value.name, '');
-            tc.verifyEqual(b.statement.variable.name, 'label');
-
-            % what it was about
-            tc.verifyEqual(depValue(b, 'entity_id'), 'subj_group_9');
-            tc.verifyEmpty(depValue(b, 'subject_id'));
-            tc.verifyEmpty(depValue(b, 'derived_from_1'));
-
-            % what it labelled: a derived_from relation, label -> statement
-            tc.verifyNumElements(plan(1).related, 1);
-            r = plan(1).related{1};
-            tc.verifyEqual(r.document_class.class_name, 'directed_relation');
-            tc.verifyEqual(depValue(r, 'child_id'), 'lab_1');
-            tc.verifyEqual(depValue(r, 'parent_id'), 'img_1');
-            tc.verifyTrue(ndi.v2.vocabIs('relation', r.directed_relation.relation, 'derived_from'));
-        end
-        function testTheIdIsPreservedSoTheReplacementSupersedesThePassthrough(tc)
-            % The calculator lesson: dissolving a referenced document without
-            % keeping its id cost 11,448 orphans. It also means local.m can
-            % remove the passthrough safely -- two documents with one id is not a
-            % state this database has a meaning for.
-            batch = { ...
-                imageObservation('img_1', 'sess1', 'subj_group_9', 'anchor_1'), ...
-                labelBody('lab_1', 'sess1', 'img_1', 'EMPTY:0000131') };
-            plan = ndi.migrate.internal.ontologyLabelSubjects(batch);
-            tc.verifyEqual(plan(1).source_id, 'lab_1');
-            tc.verifyEqual(plan(1).body.base.id, 'lab_1');
-            tc.verifyEqual(sessionOf(plan(1).body), 'sess1');
-        end
-
-        function testTheTimeAnchorIsReusedNotMinted(tc)
-            % `time_reference_#` carries min_count 1 on subject_interaction, so
-            % it cannot be omitted -- and the label is about that observation, at
-            % that time. Minting a second anchor for the same instant is #52's
-            % undefined-meaning case.
-            batch = { ...
-                imageObservation('img_1', 'sess1', 'subj_group_9', 'anchor_1'), ...
-                labelBody('lab_1', 'sess1', 'img_1', 'EMPTY:0000131') };
-            plan = ndi.migrate.internal.ontologyLabelSubjects(batch);
-            tc.verifyEqual(plan(1).time_reference_id, 'anchor_1');
-            tc.verifyEqual(depValue(plan(1).body, 'time_reference_id'), 'anchor_1');
+            [~, rep] = ndi.migrate.internal.ontologyLabelSubjects(batch);
+            tc.assertNumElements(rep.carry_rows, 1);
+            tc.verifyEqual(rep.carry_rows(1).dependency, 'img_1');
         end
 
         function testTheEColiHalfIsBlockedAndCountedSeparately(tc)
@@ -199,6 +171,9 @@ classdef TestOntologyLabelSubjects < matlab.unittest.TestCase
             [plan, rep] = ndi.migrate.internal.ontologyLabelSubjects(batch);
             tc.verifyEmpty(plan);
             tc.verifyEqual(rep.unresolved_no_ontology_node, 1);
+            tc.verifyEqual(rep.carried_target_has_subject_and_time, 0, ...
+                'the malformed row is checked before the needs_mapping carry');
+            tc.verifyEqual({rep.carry_rows.row}, {'carry-097'});
         end
 
         function testALabelWithAFieldTheObservationCannotPlaceIsLeftAsV1(tc)
@@ -214,11 +189,18 @@ classdef TestOntologyLabelSubjects < matlab.unittest.TestCase
             [plan, rep] = ndi.migrate.internal.ontologyLabelSubjects(batch);
             tc.verifyEmpty(plan);
             tc.verifyEqual(rep.unresolved_unplaced_fields, 1);
-            % the same label without the extra field is placed
+            tc.verifyEqual(rep.carried_target_has_subject_and_time, 0, ...
+                'the malformed row is checked before the needs_mapping carry');
+            tc.verifyEqual({rep.carry_rows.row}, {'carry-100'});
+            % the control: the same label without the extra field is not
+            % malformed, and is carried as needs_mapping (carry-096) since
+            % 2026-11-26 (it was placed as an observation until then)
             [plan2, rep2] = ndi.migrate.internal.ontologyLabelSubjects({batch{1}, ...
                 labelBody('lab_8', 'sess1', 'img_1', 'EMPTY:0000131')});
-            tc.verifyNumElements(plan2, 1);
+            tc.verifyEmpty(plan2);
             tc.verifyEqual(rep2.unresolved_unplaced_fields, 0);
+            tc.verifyEqual(rep2.carried_target_has_subject_and_time, 1);
+            tc.verifyEqual({rep2.carry_rows.row}, {'carry-096'});
         end
 
         function testALabelOutsideItsTemplateIsCarriedUnderCarry100(tc)
@@ -280,34 +262,37 @@ classdef TestOntologyLabelSubjects < matlab.unittest.TestCase
             tc.verifyEqual(rep.carry_rows(1).row, 'carry-100');
         end
 
-        function testAlreadyConvertedLabelsAreNotReprocessed(tc)
+        function testARerunNamesTheSameRows(tc)
             % Idempotence. ndi.migrate.local documents itself as idempotent: a
             % re-run reads every document back and runs the second pass again.
-            % The replacement is a `term_observation`, not an `ontology_label`,
-            % so the second run finds nothing to do -- and a pass that "resolved"
-            % its own output would double-count forever.
-            obs = imageObservation('img_1', 'sess1', 'subj_group_9', 'anchor_1');
-            plan = ndi.migrate.internal.ontologyLabelSubjects( ...
-                {obs, labelBody('lab_1', 'sess1', 'img_1', 'EMPTY:0000131')});
-            [plan2, rep2] = ndi.migrate.internal.ontologyLabelSubjects( ...
-                {obs, plan(1).body});
+            % The pass changes nothing in the batch, so a re-run on the same
+            % batch names the same rows and still writes nothing.
+            batch = {imageObservation('img_1', 'sess1', 'subj_group_9', 'anchor_1'), ...
+                labelBody('lab_1', 'sess1', 'img_1', 'EMPTY:0000131')};
+            [plan, rep] = ndi.migrate.internal.ontologyLabelSubjects(batch);
+            [plan2, rep2] = ndi.migrate.internal.ontologyLabelSubjects(batch);
+            tc.verifyEmpty(plan);
             tc.verifyEmpty(plan2);
-            tc.verifyEqual(rep2.labels_passthrough, 0);
-            tc.verifyEqual(rep2.resolved, 0);
+            tc.verifyEqual(rep2.labels_passthrough, 1);
+            tc.verifyEqual(sortedRows(rep2), sortedRows(rep));
         end
 
-        function testAPreEightyEightReferentStillResolves(tc)
+        function testAPreEightyEightReferentIsReadTheSame(tc)
             % pass-1 output from a pre-#88 DID-matlab (subject_id,
-            % time_reference_1) is read the same way
+            % time_reference_1) is read the same way: the target is found to
+            % have a subject and a time, so the label is carried under
+            % carry-096 as needs_mapping, not counted as subject-less
             obs = imageObservation('img_1', 'sess1', 'subj_group_9', 'anchor_1');
             obs.depends_on = [ ...
                 struct('name', 'subject_id',       'value', 'subj_group_9'), ...
                 struct('name', 'time_reference_1', 'value', 'anchor_1')];
             [plan, rep] = ndi.migrate.internal.ontologyLabelSubjects( ...
                 {obs, labelBody('lab_1', 'sess1', 'img_1', 'EMPTY:0000131')});
-            tc.verifyEqual(rep.resolved, 1);
-            tc.verifyEqual(depValue(plan(1).body, 'entity_id'), 'subj_group_9');
-            tc.verifyEqual(depValue(plan(1).body, 'time_reference_id'), 'anchor_1');
+            tc.verifyEmpty(plan);
+            tc.verifyEqual(rep.carried_target_has_subject_and_time, 1);
+            tc.verifyEqual(rep.blocked_target_has_no_subject, 0);
+            tc.verifyEqual(rep.unresolved_target_no_time_reference, 0);
+            tc.verifyEqual({rep.carry_rows.row}, {'carry-096'});
         end
 
         function testTheLabelClassHelperAcceptsTheV1SpellingOnly(tc)
@@ -332,18 +317,16 @@ classdef TestOntologyLabelSubjects < matlab.unittest.TestCase
 
         function testARawV1LabelIsFoundUnderItsV1ClassName(tc)
             % DID-matlab hands the second pass a label in NDI's own spelling:
-            % class_name `ontologyLabel`. It is found, counted and resolved.
+            % class_name `ontologyLabel`. It is found, counted and given its
+            % row (carried, since 2026-11-26).
             batch = { ...
                 imageObservation('img_1', 'sess1', 'subj_group_9', 'anchor_1'), ...
                 labelBody('lab_1', 'sess1', 'img_1', 'EMPTY:0000131') };
             [plan, rep] = ndi.migrate.internal.ontologyLabelSubjects(batch);
             tc.verifyEqual(rep.labels_passthrough, 1);
-            tc.verifyEqual(rep.resolved, 1);
-            tc.verifyNumElements(plan, 1);
-            tc.verifyEqual(plan(1).source_id, 'lab_1');
-            tc.verifyEqual(plan(1).subject_id, 'subj_group_9');
-            tc.verifyEqual(plan(1).body.document_class.class_name, 'observation');
-            tc.verifyEqual(plan(1).body.term.value.node, 'EMPTY:0000131');
+            tc.verifyEmpty(plan);
+            tc.verifyEqual({rep.carry_rows.id}, {'lab_1'});
+            tc.verifyEqual({rep.carry_rows.row}, {'carry-096'});
         end
 
         function testUnreadableEntriesAreCountedNotDropped(tc)
@@ -455,6 +438,12 @@ if isfield(b.base, 'session_id')
 else
     sid = depValue(b, 'session_id');
 end
+end
+
+function rows = sortedRows(rep)
+% the report's carry rows as sorted 'id|row|dependency' strings
+rows = sort(arrayfun(@(r) [r.id '|' r.row '|' r.dependency], rep.carry_rows, ...
+    'UniformOutput', false));
 end
 
 function ids = planIds(plan)

@@ -31,6 +31,8 @@ classdef TestEpochClockOrder < matlab.unittest.TestCase
     properties
         Dir
         Session
+        SessionDir
+        RecordingB
     end
 
     properties (Constant)
@@ -84,13 +86,15 @@ classdef TestEpochClockOrder < matlab.unittest.TestCase
             % epoch B: the database holds dev_local_time first; the
             % recording names exp_global_time first
             [b, refsB] = P.epochDocs('epoch_b', epochType, sid, S);
-            docs = [docs, {b, refsB.dev, refsB.exp}, ...
-                P.recording(sys, {refsB.exp, refsB.dev}, bytes, T, S)];
+            recB = P.recording(sys, {refsB.exp, refsB.dev}, bytes, T, S);
+            testCase.RecordingB = recB{1}.base.id;
+            docs = [docs, {b, refsB.dev, refsB.exp}, recB];
 
             sessionDir = fullfile(testCase.Dir, 'session');
             mkdir(sessionDir);
             testCase.Session = ndi.setup.V2.createSession(sessionDir, 'epoch clock order', ...
                 'SessionId', sid, 'Documents', docs, 'Validate', false);
+            testCase.SessionDir = sessionDir;
         end
     end
 
@@ -131,6 +135,60 @@ classdef TestEpochClockOrder < matlab.unittest.TestCase
                 testCase.verifyEqual(B.t0_t1, {P.ExpT, P.DevT}, ['epoch_b' what]);
             end
         end
+
+        function testAnEpochWhoseRecordingComesBackIsReadAgain(testCase)
+            % The derived index (ndi.vintage.epochIndex) keeps each epoch's
+            % 'ClocksOnly' answer with the ids it was read from. An epoch
+            % whose one recording is removed has no answer; when the
+            % recording is added again (timed by the epoch's references),
+            % the index must answer as a fresh read does, not keep the "no
+            % answer" row. epochIndexEquivalence found it on B (run
+            % 45843349498: 286 of 3354 reader comparisons, from "after
+            % re-adding the statement" on). Control: epoch_a, whose
+            % recording is never touched, reads the same throughout.
+            P = ndi.unittest.vintage.TestEpochClockOrder;
+            S = testCase.Session;
+            testCase.assertTrue(ndi.vintage.epochIndex('available', S), ...
+                'the session keeps no derived rows: this checks nothing');
+            raw = did2.database.sqlitedb(fullfile(testCase.SessionDir, '.ndi', ...
+                ndi.database.implementations.database.did2sqlite.DEFAULTFILENAME()));
+            testCase.addTeardown(@() raw.close());
+            read = @(useIndex) ndi.vintage.ingestedArchives(S, P.ReaderId, ...
+                {'epoch_a', 'epoch_b'}, 'ClocksOnly', true, 'UseIndex', useIndex);
+            read(true);   % the rows, stored
+            d = raw.get(testCase.RecordingB);
+            raw.remove(testCase.RecordingB);
+            testCase.addTeardown(@() addBack(raw, d));   % runs before the close
+            fresh = read(false);
+            testCase.verifyFalse(isKey(fresh, 'epoch_b'), ...
+                'premise: without its recording epoch_b still has an answer');
+            for pass = 1:2
+                M = read(true);
+                testCase.verifyEqual(sort(M.keys), sort(fresh.keys), ...
+                    sprintf('recording removed, index read %d', pass));
+            end
+            raw.add({d}, 'Validate', false);
+            fresh = read(false);
+            testCase.assertTrue(isKey(fresh, 'epoch_b') && isKey(fresh, 'epoch_a'), ...
+                'premise: with its recording back, a fresh read gives epoch_b no answer');
+            for pass = 1:2
+                M = read(true);
+                what = sprintf('recording added again, index read %d', pass);
+                testCase.verifyTrue(isKey(M, 'epoch_b'), ...
+                    ['epoch_b: the index kept the row read while its recording was gone (' what ')']);
+                for lid = {'epoch_a', 'epoch_b'}
+                    if ~isKey(M, lid{1}); continue; end
+                    A = M(lid{1});
+                    F = fresh(lid{1});
+                    testCase.verifyEqual(A.epochclock, F.epochclock, [lid{1} ': ' what]);
+                    testCase.verifyEqual(A.t0_t1, F.t0_t1, [lid{1} ': ' what]);
+                end
+            end
+            B = fresh('epoch_b');
+            A = fresh('epoch_a');
+            testCase.verifyEqual(B.epochclock, {'exp_global_time', 'dev_local_time'});
+            testCase.verifyEqual(A.epochclock, {'dev_local_time', 'exp_global_time'});
+        end
     end
 
     methods (Static, Access = private)
@@ -159,4 +217,11 @@ classdef TestEpochClockOrder < matlab.unittest.TestCase
             docs = {obs, body};
         end
     end
+end
+
+function addBack(raw, d)
+% put the removed recording back if the test stopped before it did
+if ~raw.has(d)
+    raw.add({d}, 'Validate', false);
+end
 end
