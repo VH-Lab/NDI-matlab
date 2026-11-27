@@ -120,6 +120,7 @@ end
 systems = S.database_search(ndi.vintage.acquisitionConfigurationQuery() & ...
     ndi.query('', 'depends_on', 'reader_id', readerId) & inSession);
 if isempty(systems) || isempty(anchors)
+    D = noRecordingDeps(epochIds, entityIdsOf, anchors, anchorRows);
     return;
 end
 % every statement timed by these anchors (shared, light: edges only), kept
@@ -157,6 +158,7 @@ end
 logs = ndi.vintage.ingestedStimulusLogBodies(S, readerId, epochIds);
 others = otherSystemsAnchorIds(allStatements, sysIds);
 if isempty(statements) && logs.Count == 0
+    D = noRecordingDeps(epochIds, entityIdsOf, anchors, anchorRows);
     return;
 end
 
@@ -229,6 +231,27 @@ for e = 1:numel(epochIds)
     catch
         % ingestedArchive raises the same error; the caller asks it
     end
+end
+end
+
+function D = noRecordingDeps(epochIds, entityIdsOf, anchors, anchorRows)
+% what an epoch with no recording on this reader's systems (and no stimulus
+% log) was read from, for the derived index's row: its entities and the
+% references onto them. A recording added later is timed by one of those
+% references, so adding it drops the row. Recorded with its entities only,
+% the row of an epoch whose one recording was removed stayed "no answer"
+% after the recording came back (epochIndexEquivalence, B run 45843349498:
+% 286 of 3354 reader comparisons, from "after re-adding the statement" on).
+D = containers.Map('KeyType', 'char', 'ValueType', 'any');
+aIds = {};
+if iscell(anchors) && ~isempty(anchors)
+    aIds = cellfun(@(d) char(d.id()), anchors, 'UniformOutput', false);
+end
+for e = 1:numel(epochIds)
+    lid = epochIds{e};
+    rows = [];
+    if isKey(anchorRows, lid); rows = unique(anchorRows(lid)); end
+    D(lid) = [reshape(entityIdsOf(lid), 1, []), reshape(aIds(rows), 1, [])];
 end
 end
 

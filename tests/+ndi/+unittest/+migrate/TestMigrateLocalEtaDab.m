@@ -370,13 +370,27 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             % Before that decision this test stated that nothing retires
             % without a presentation. The stimulators reading their subject
             % back from the baths is testTheSameObjectsBeforeAndAfterMigration's.
+            %
+            % SINCE AUDIT BATCH 2 (b) (Jess Haley, 2026-11-26, building
+            % [one-reading quick answers] Q2): Dab writes NO bath manipulation.
+            % Of its 1,605 baths, 1,172 are carried for their units (carry-155,
+            % [Dab bath units are Dabrowska's]) and the other 433 because no
+            % clock record gives their stimulator's epoch (carry-157,
+            % testBathsWithNoClockRecordAreCarriedAsV1), so none retires an
+            % `observes` relation on a bath, and every stimulator's relation
+            % retires as carried (its subject read back from the carried
+            % fields, checked below). The bath rule itself is
+            % TestObservesRetirement's. Until then this test asserted that Dab
+            % converts bath manipulations and retires on them.
             r = ndi.unittest.migrate.verifyObservesRetirement(testCase, testCase.Result, 'Dab');
             testCase.verifyEqual(r.retired_by_presentation, 0, ...
                 'Dab retired an `observes` relation on a presentation it does not hold');
-            testCase.verifyGreaterThan(r.bath_manipulations, 0, ...
-                'Dab converted no bath manipulation (nothing measured)');
-            testCase.verifyGreaterThan(r.retired_by_bath, 0, ...
-                'Dab retired no `observes` relation on its bath manipulations');
+            testCase.verifyEqual(r.bath_manipulations, 0, ...
+                'a Dab bath was converted: every one is carried (carry-155, carry-157)');
+            testCase.verifyEqual(r.retired_by_bath, 0, ...
+                'Dab retired an `observes` relation on a bath manipulation it does not hold');
+            testCase.verifyGreaterThan(r.retired_carried, 0, ...
+                'no Dab `observes` relation retired as carried (nothing measured)');
             % [one-field carry in the migration report]: an element whose
             % `observes` retires because no statement names its v1 subject
             % reads that subject back from the carried fields (0 included)
@@ -501,8 +515,12 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             verifyGreaterThan(testCase, numel(expected), 0, ...
                 'no Dab bath has an osm or saturation row: this checks nothing');
             verifyEqual(testCase, r.baths_carried_unread_unit, numel(expected));
-            verifyEqual(testCase, sort({r.carry_rows.id}), sort(expected));
-            verifyTrue(testCase, all(strcmp({r.carry_rows.row}, 'carry-155')));
+            % the carry-155 rows exactly; since audit batch 2 (b) (2026-11-26)
+            % the step also records carry-157 rows, checked by
+            % testBathsWithNoClockRecordAreCarriedAsV1
+            is155 = strcmp({r.carry_rows.row}, 'carry-155');
+            verifyEqual(testCase, sort({r.carry_rows(is155).id}), sort(expected));
+            verifyTrue(testCase, all(ismember({r.carry_rows.row}, {'carry-155', 'carry-157'})));
             dst = destinationBodies(testCase.Result.destination);
             stamp = containers.Map('KeyType', 'char', 'ValueType', 'char');
             for k = 1:numel(dst)
@@ -515,6 +533,165 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
                 verifyTrue(testCase, isKey(stamp, expected{k}) ...
                     && strcmp(stamp(expected{k}), 'did_v1'), ...
                     sprintf('bath %s is not stored as a v1 document', expected{k}));
+            end
+        end
+
+        function testBathsWithNoClockRecordAreCarriedAsV1(testCase)
+            % [one-reading quick answers] Q2 and [no invented values] (Jess
+            % Haley, 2026-10-26, did-schema did_v2_go_forward_class_audit.md;
+            % built in NDI 2026-11-26, audit batch 2 (b)): a bath whose epoch
+            % has no clock record for its stimulator is carried as v1
+            % (carry-157), not anchored on an assumed 'dev_local_time'. In the
+            % Dab v1 bodies no (stimulator, epoch) pair of a bath has an
+            % element_epoch or an epochclocktimes (1,605 of 1,605, measured
+            % 2026-11-26), so every bath the unit check does not carry
+            % (carry-155) is carried here: DID-matlab's resolveDeferredBaths
+            % carries the same 433 (#325). EXPECTED is computed from the v1
+            % bodies directly, not through the resolver under test.
+            clockKeys = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+            baths = {};
+            for k = 1:numel(testCase.Bodies)
+                txt = testCase.Bodies{k};
+                if contains(txt, '"element_epoch"') || contains(txt, '"epochclocktimes"')
+                    b = jsondecode(txt);
+                    cn = b.document_class.class_name;
+                    ep = '';
+                    if isfield(b, 'epochid') && isfield(b.epochid, 'epochid')
+                        ep = char(b.epochid.epochid);
+                    end
+                    if strcmp(cn, 'element_epoch') && isfield(b, 'element_epoch') ...
+                            && ~isempty(b.element_epoch.epoch_clock)
+                        clockKeys([char(edgeOf(b, 'element_id')) '|' ep]) = true;
+                    elseif strcmp(cn, 'epochclocktimes') && isfield(b, 'epochclocktimes') ...
+                            && ~isempty(b.epochclocktimes.clocktype)
+                        clockKeys(['*|' ep]) = true;
+                    end
+                elseif contains(txt, '"stimulus_bath"')
+                    baths{end+1} = jsondecode(txt); %#ok<AGROW>
+                end
+            end
+            expected = {};
+            for k = 1:numel(baths)
+                b = baths{k};
+                if ~isempty(ndi.migrate.internal.bathUnreadUnitRows(b))
+                    continue;   % carry-155 first
+                end
+                ep = char(b.epochid.epochid);
+                st = char(edgeOf(b, 'stimulus_element_id'));
+                if ~isempty(ep) && ~isempty(st) && ~isKey(clockKeys, [st '|' ep]) ...
+                        && ~isKey(clockKeys, ['*|' ep])
+                    expected{end+1} = char(b.base.id); %#ok<AGROW>
+                end
+            end
+            r = testCase.Result.secondPass.deferred;
+            assertNotEmpty(testCase, r, 'resolveDeferred reported nothing');
+            fprintf(['\n  BATHS WITH NO CLOCK RECORD (Dab)\n    baths read %d; deferrals ' ...
+                'read %d; with no clock record for their stimulator''s epoch %d; ' ...
+                'carried as v1 (carry-157) %d\n'], numel(baths), r.deferred_seen, ...
+                numel(expected), r.baths_carried_no_clock);
+            verifyGreaterThan(testCase, numel(baths), 0, 'the denominator: no Dab bath was read');
+            verifyGreaterThan(testCase, numel(expected), 0, ...
+                'no Dab bath lacks a clock record: this checks nothing');
+            verifyEqual(testCase, r.baths_carried_no_clock, numel(expected));
+            is157 = strcmp({r.carry_rows.row}, 'carry-157');
+            verifyEqual(testCase, sort({r.carry_rows(is157).id}), sort(expected));
+            dst = destinationBodies(testCase.Result.destination);
+            stamp = containers.Map('KeyType', 'char', 'ValueType', 'char');
+            for k = 1:numel(dst)
+                b = dst{k};
+                if strcmp(b.document_class.class_name, 'stimulus_bath')
+                    stamp(b.base.id) = char(b.document_class.schema_version);
+                end
+            end
+            for k = 1:numel(expected)
+                verifyTrue(testCase, isKey(stamp, expected{k}) ...
+                    && strcmp(stamp(expected{k}), 'did_v1'), ...
+                    sprintf('bath %s is not stored as a v1 document', expected{k}));
+            end
+        end
+
+        function testElementsWhoseProbeMapsNameAnotherSubjectAreCarriedAsV1(testCase)
+            % Decided by Jess Haley, 2026-11-26 [element whose probe maps
+            % name another subject is malformed] (did-schema
+            % did_v2_go_forward_class_audit.md; built by DID-matlab's
+            % +migrators_j/element.m, carry-170): a v1 element whose epoch
+            % probe maps name a subject other than its own `subject_id` is
+            % malformed v1 and is carried whole. In Dab these are the 4
+            % two-subject recording probes carry-170 already carried and the
+            % two bath stimulators bath_230616_BNSTIII_a and
+            % bath_230620_BNSTIII_a (VH-Lab/NDI-matlab#1309), which are then
+            % no longer read back twice by verifyCarriedSubjects (which stays
+            % as strict as it is, testObservesRetirementIsCounted). EXPECTED
+            % is computed from the v1 bodies directly, joining a probe-map row
+            % to its element by (session, name, reference) as DID-matlab's
+            % probemapSubjects does, not through the migrator under test.
+            subjName = containers.Map('KeyType', 'char', 'ValueType', 'char');
+            rowSubjects = containers.Map('KeyType', 'char', 'ValueType', 'any');
+            els = {};
+            for k = 1:numel(testCase.Bodies)
+                txt = testCase.Bodies{k};
+                if ~(contains(txt, '"element"') || contains(txt, '"subject"') ...
+                        || contains(txt, 'epochprobemap'))
+                    continue;
+                end
+                b = jsondecode(txt);
+                if ~isfield(b, 'document_class'); continue; end
+                switch char(b.document_class.class_name)
+                    case 'subject'
+                        subjName(char(b.base.id)) = strtrim(char(b.subject.local_identifier));
+                    case 'element'
+                        els{end+1} = b; %#ok<AGROW>
+                    case 'epochfiles_ingested'
+                        pm = b.epochfiles_ingested.epochprobemap;
+                        if ~ischar(pm) || isempty(pm); continue; end
+                        rows = probemapRows(pm);
+                        for r = 1:numel(rows)
+                            row = rows{r};
+                            if isempty(row{3}); continue; end
+                            key = strjoin({strtrim(char(b.base.session_id)), row{1}, row{2}}, char(9));
+                            if isKey(rowSubjects, key)
+                                rowSubjects(key) = unique([rowSubjects(key), row(3)], 'stable');
+                            else
+                                rowSubjects(key) = row(3);
+                            end
+                        end
+                end
+            end
+            expected = {};
+            names = {};
+            for k = 1:numel(els)
+                b = els{k};
+                sj = strtrim(char(edgeOf(b, 'subject_id')));
+                if isempty(sj) || ~isKey(subjName, sj); continue; end
+                key = strjoin({strtrim(char(b.base.session_id)), strtrim(char(b.element.name)), ...
+                    refAsText(b.element.reference)}, char(9));
+                if ~isKey(rowSubjects, key); continue; end
+                named = rowSubjects(key);
+                if any(~strcmp(named, subjName(sj)) & ~strcmp(named, sj))
+                    expected{end+1} = char(b.base.id); %#ok<AGROW>
+                    names{end+1} = strtrim(char(b.element.name)); %#ok<AGROW>
+                end
+            end
+            fprintf(['\n  ELEMENTS WHOSE PROBE MAPS NAME ANOTHER SUBJECT (Dab)\n    elements read %d; ' ...
+                'named by a probe-map row with a subject %d; naming another subject %d: %s\n'], ...
+                numel(els), numel(rowSubjects.keys), numel(expected), strjoin(names, ', '));
+            verifyGreaterThan(testCase, numel(els), 0, 'the denominator: no Dab element was read');
+            for nm = {'bath_230616_BNSTIII_a', 'bath_230620_BNSTIII_a'}
+                verifyTrue(testCase, any(strcmp(names, nm{1})), ...
+                    sprintf('%s: its probe-map rows no longer name a second subject', nm{1}));
+            end
+            dst = destinationBodies(testCase.Result.destination);
+            stamp = containers.Map('KeyType', 'char', 'ValueType', 'char');
+            for k = 1:numel(dst)
+                b = dst{k};
+                if isfield(b, 'base') && isfield(b.base, 'id') && any(strcmp(expected, char(b.base.id)))
+                    stamp(char(b.base.id)) = char(b.document_class.schema_version);
+                end
+            end
+            for k = 1:numel(expected)
+                verifyTrue(testCase, isKey(stamp, expected{k}) ...
+                    && strcmp(stamp(expected{k}), 'did_v1'), ...
+                    sprintf('element %s (%s) is not stored as a v1 document', expected{k}, names{k}));
             end
         end
 
@@ -586,8 +763,8 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             % (examined, matched, ambiguous: 202, 201, 1 -> 0, 0, 0) and
             % re-attributes 201 fewer documents (4190 -> 3989, the same in
             % reattributions_applied). The 147 still read their slice: the
-            % map moves their baths (formulation_manipulation 433, as
-            % before). The 55 whose only baths are carried as v1 (the
+            % map moved their baths (formulation_manipulation 433, as
+            % before; 0 since the MOVED BY 433 note below). The 55 whose only baths are carried as v1 (the
             % OSM/saturation deferrals) read the animal, carried, until those
             % baths are imported. Every other field is unchanged.
             r = testCase.MapReport;
@@ -600,8 +777,8 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
                 'stimulators_not_a_slice_bath', 0, 'stimulators_animal_mismatch', 0, ...
                 'slices', 203, 'new_animals', 1, 'epochs_on_a_nested_date', 11, ...
                 'new_animal_strain_assertions_copied', 1, ...
-                'epoch_statements_examined', 5209 - 1592 + 1579, 'epoch_statements_matched', 5183 - 1592 + 1579, ...
-                'epoch_statements_unmatched', 26, ...
+                'epoch_statements_examined', 5209 - 1592 + 1579 - 433 + 13, 'epoch_statements_matched', 5183 - 1592 + 1579 - 433, ...
+                'epoch_statements_unmatched', 26 + 13, ...
                 'unanchored_statements_examined', 400, 'unanchored_statements_matched', 398, ...
                 'unanchored_statements_ambiguous', 2, ...
                 'element_relations_examined', 0, 'element_relations_matched', 0, ...
@@ -613,9 +790,9 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
                 'labels_rebuilt', 635, 'labels_not_rebuilt', 0, 'approach_labels_removed', 635, ...
                 'treatment_manipulations_found', 0, ...
                 'documents_minted', 520, 'minted_folded', 520, 'minted_quarantined', 0, ...
-                'documents_reattributed', 5782 - 1592 - 201 + 1579, 'documents_removed', 635, ...
+                'documents_reattributed', 5782 - 1592 - 201 + 1579 - 433, 'documents_removed', 635, ...
                 'removals_withheld_still_referenced', 0, ...
-                'reattributions_applied', 5782 - 1592 - 201 + 1579, 'removals_applied', 635, ...
+                'reattributions_applied', 5782 - 1592 - 201 + 1579 - 433, 'removals_applied', 635, ...
                 'replacements_refused_have_files', 0);
             % MOVED BY 1 for DID-matlab #506 (2bdc9f81; [openMINDS minted ids are
             % an accepted loss], Jess Haley, 2026-11-19): the openMINDS subject
@@ -638,7 +815,25 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             % re-attributed and re-attributions applied each +1579, and
             % voltage_manipulation 1579 in the by-class table (Dab run
             % 44906459934 on 8ca26dbd).
-            byClass = struct('formulation_manipulation', 433, 'term_observation', 398, ...
+            % MOVED BY 433 for [one-reading quick answers] Q2 (Jess Haley,
+            % 2026-10-26; built in NDI 2026-11-26, audit batch 2 (b)): the
+            % 433 Dab baths with no clock record for their stimulator's epoch
+            % (testBathsWithNoClockRecordAreCarriedAsV1) are carried as v1
+            % (carry-157), so no bath manipulation is written for the map to
+            % re-attribute: epoch statements examined and matched, documents
+            % re-attributed and re-attributions applied each -433, and
+            % formulation_manipulation 433 -> 0 (Dab run 45766472707 on
+            % 869fb064: 4763, 4737, 5336, 5336, 0).
+            % MOVED BY 13 for the probe-map subject rule (Jess Haley,
+            % 2026-11-26, on #1309: "This is malformed v1", then "Yes";
+            % built by DID-matlab's +migrators_j/element.m, carry-170): the
+            % two bath stimulators whose rows name a second rat
+            % (bath_230616_BNSTIII_a, bath_230620_BNSTIII_a) are carried as v1
+            % elements, and the epoch statements made with them that the map
+            % does not match grow by 13 (examined and unmatched +13; other
+            % manipulations 1591 -> 1604 in the observes census; Dab run
+            % 45843345435 on 800da5ac: 4776, 39).
+            byClass = struct('term_observation', 398, ...
                 'voltage_manipulation', 1579, ...
                 'voltage_observation', 1579, ...
                 'current_observation', 1579);
@@ -1061,6 +1256,35 @@ function s = resultDiag(result)
 s = sprintf('[migrated %d, quarantined %d, edges %d] %s', ...
     result.summary.total, numel(result.quarantine), ...
     result.references.edges_examined, quarantineDiag(result));
+end
+
+function rows = probemapRows(s)
+%PROBEMAPROWS {name, reference, subjectstring} of each row of a serialized
+% v1 epochprobemap (tab-separated; a header row is skipped), as DID-matlab's
+% probemapSubjects reads it.
+rows = {};
+lines = strsplit(char(s), newline, 'CollapseDelimiters', false);
+lines = lines(~cellfun(@(l) isempty(strtrim(l)), lines));
+if isempty(lines); return; end
+h = strtrim(strsplit(lines{1}, char(9), 'CollapseDelimiters', false));
+if isequal(lower(h), {'name', 'reference', 'type', 'devicestring', 'subjectstring'})
+    lines = lines(2:end);
+end
+for i = 1:numel(lines)
+    c = strsplit(lines{i}, char(9), 'CollapseDelimiters', false);
+    c(end+1:5) = {''};
+    rows{end+1} = {strtrim(c{1}), strtrim(c{2}), strtrim(c{5})}; %#ok<AGROW>
+end
+end
+
+function t = refAsText(r)
+%REFASTEXT A v1 element reference as text, an integer as int2str writes it.
+t = '';
+if ischar(r) || (isstring(r) && isscalar(r))
+    t = strtrim(char(r));
+elseif (isnumeric(r) || islogical(r)) && isscalar(r)
+    if r == round(r); t = int2str(r); else; t = num2str(r, 17); end
+end
 end
 
 function v = edgeOf(b, name)

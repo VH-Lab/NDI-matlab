@@ -190,6 +190,19 @@ end
 % --- resolve the session/element context (the reason this is NDI-layer) -----
 subjectId  = resolver.subjectOfElement(stimulatorId);
 epochClock = resolver.epochClockOfElement(stimulatorId, epochId);
+% NO CLOCK RECORD => NOT ASSEMBLED. [one-reading quick answers] Q2 and [no
+% invented values] (Jess Haley, 2026-10-26, did-schema
+% did_v2_go_forward_class_audit.md; built 2026-11-26, audit batch 2 (b)): a
+% bath whose epoch has no clock record for its stimulator is carried as v1,
+% never anchored on an assumed 'dev_local_time'. ndi.migrate.local's
+% resolveDeferred carries it (carry-157) before calling this; reaching here
+% with an epoch string and no clock is a caller defect, and refused.
+if ~isempty(epochId) && isempty(epochClock)
+    error('ndi:migrate:bathNoClockRecord', ...
+        ['stimulus_bath %s: epoch "%s" has no clock record for its stimulator ' ...
+         '%s; it is carried as v1, not assembled ([one-reading quick answers] Q2).'], ...
+        bathId, epochId, stimulatorId);
+end
 
 % --- time reference (vetaBath, below) --------------------------------------
 % A `relative_time_reference` "during the session", which epochAnchorFold

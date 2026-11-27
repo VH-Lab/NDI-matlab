@@ -1,14 +1,18 @@
 function [plan, report] = ontologyLabelSubjects(migratedStructs)
-%ONTOLOGYLABELSUBJECTS V_eta second pass: give each passed-through
-%   `ontologyLabel` the SUBJECT it is about, by following its one edge through
-%   the migrated-id graph.
+%ONTOLOGYLABELSUBJECTS V_eta second pass: follow each passed-through
+%   `ontologyLabel`'s one edge through the migrated-id graph and give every
+%   label the carry register row it is carried under.
 %
 %   [PLAN, REPORT] = ndi.migrate.internal.ontologyLabelSubjects(MIGRATEDSTRUCTS)
-%   inspects every `ontologyLabel` document that pass 1 left unconverted and,
-%   for each one whose referent resolves to a statement that HAS a subject,
-%   returns a ready V_eta term observation body to replace it with, plus the
-%   `derived_from` relation that keeps what it labelled. REPORT states its
-%   denominators first and splits the unresolved into named reasons.
+%   inspects every `ontologyLabel` document that pass 1 left unconverted.
+%   Since Jess Haley's decision of 2026-11-26 (audit batch 2 (a), applying
+%   [labels are a field on what they label] and [one-reading quick answers]
+%   Q3, did-schema did_v2_go_forward_class_audit.md) NO label is converted
+%   here: a label is a field of the document it labels, which slot the v1
+%   document does not say, so every label is carried whole as v1 and REPORT
+%   names its row (REPORT.carry_rows). PLAN is always empty; it is kept so
+%   ndi.migrate.local/resolveOntologyLabelSubjects keeps its shape. REPORT
+%   states its denominators first and splits the labels into named reasons.
 %
 %   A label document is found under its v1 class name, `ontologyLabel`, and
 %   read in NDI's own spelling (block `ontologyLabel`, field `ontologyNode`,
@@ -20,19 +24,9 @@ function [plan, report] = ontologyLabelSubjects(migratedStructs)
 %   outside the template (carry-100). The class test is
 %   ndi.migrate.internal.isOntologyLabelClass, the one place that decides.
 %
-%   THE SHAPE IS did-schema #88's (V_eta_entity_composition_plan.md sec. 1): the
-%   observation is the `observation` direction with the `term` value-kind mixin,
-%   about its `entity_id`, timed by `time_reference_id`. #88 has no
-%   `derived_from_#` edge on a statement; a statement derived from another is a
-%   `derived_from` directed_relation (child_id the label, parent_id the
-%   labelled statement; directed_relation.json: "a label calculation
-%   derived_from an external atlas"). The reads accept the pre-#88 spelling
-%   (`subject_id`, `time_reference_1`) as well.
-%
 %   This function is PURE: it reads structs and returns structs. It calls no
 %   converter, touches no database and needs no schema -- which is what makes it
-%   testable without a corpus. ndi.migrate.local/resolveOntologyLabelSubjects
-%   does the fold.
+%   testable without a corpus.
 %
 %   Tests: tests/+ndi/+unittest/+migrate/TestOntologyLabelSubjects.m.
 %
@@ -104,51 +98,23 @@ function [plan, report] = ontologyLabelSubjects(migratedStructs)
 %   sites below; no dataset's map is written yet, so nothing here fills a
 %   slot.
 %
-%   ---------------------------------------------------------------------
-%   WHAT IS EMITTED, AND WHAT IS DELIBERATELY NOT
-%   ---------------------------------------------------------------------
-%   A `term_observation` (⊂ subject_observation, term), per Decision D5
-%   (V_eta_migration_plan.md D.2: "locus / label terms -> term_observation;
-%   element = subject, labeling relation = variable, term = value"), matching the
-%   two shipped siblings +migrators_j/probe_location.m ('anatomical location')
-%   and +migrators_j/ontology_image.m ('imaged region'):
-%
-%     base.id          PRESERVED from the ontology_label. The calculator lesson:
-%                      dissolving a referenced document without keeping its id
-%                      cost 11,448 orphans, and existence-only `must_refer` means
-%                      a preserved id keeps every inbound edge resolving whether
-%                      or not one exists today.
-%     entity_id        the subject the referent statement is about
-%     derived_from     a directed_relation to the referent statement itself
-%                      (`derived_from_1` before #88) -- so BOTH facts survive:
-%                      the term, and what it was about. This is the link whose
-%                      absence made the old behaviour a loss rather than a rename.
-%     time_reference_id REUSED from the referent statement, not minted. The label
-%                      is about that observation and shares its time; minting a
-%                      second anchor for the same instant would be #52's
-%                      undefined-meaning case, and `time_reference_#` carries
-%                      min_count 1 so it cannot simply be omitted.
-%     term.value       the ontology node, verbatim
-%     variable         {node: '', name: 'label'}  <- OPEN QUESTION, see below
-%
-%   NOT EMITTED, and each refusal is counted rather than papered over:
-%     * no `document_id` edge                -> unresolved_no_document_edge
-%     * referent not in the migrated set     -> unresolved_target_not_in_batch
-%     * referent has no subject              -> blocked_target_has_no_subject
-%     * referent has no time_reference       -> unresolved_target_no_time_reference
-%     * no `ontology_node` on the label      -> unresolved_no_ontology_node
-%       (`term.value` is REQUIRED and, with strictMode('NonVacuousFields') armed,
-%       an all-blank term QUARANTINES. A label with no node says nothing; the
-%       passthrough at least preserves the document.)
-%
-%   OPEN QUESTION, FOR THE TEAM, NOT DECIDED HERE. `subject_statement.variable`
-%   is REQUIRED and non-blank, and D5 fixes its ROLE ("the labeling relation")
-%   without fixing its TERM for this class. Its two shipped siblings use bare
-%   noun phrases with a staged empty node ('anatomical location', 'imaged
-%   region'); D5's own prose offers `annotated_as`. This pass emits 'label',
-%   which is the class's own word and the most neutral of the three, with an
-%   empty node like all 34 other staged terms. It is ONE CONSTANT
-%   (LABEL_VARIABLE below); changing it is a one-line change and a re-run.
+%   EVERY LABEL IS CARRIED (Jess Haley, 2026-11-26, audit batch 2 (a)): a
+%   label whose referent HAS a subject and a time reference was written as a
+%   term observation of that subject (variable 'label', D5) until then. That
+%   is "every label as an observation", the reading [one-reading quick
+%   answers] Q3 carries as `needs_mapping`; it is carried under carry-096,
+%   the row of [labels are a field on what they label], and counted
+%   `carried_target_has_subject_and_time`. The rows, in the order checked:
+%     * no `document_id` edge                -> unresolved_no_document_edge (carry-097)
+%     * referent not in the migrated set     -> unresolved_target_not_in_batch (carry-097)
+%     * referent has no subject              -> blocked_target_has_no_subject (carry-096)
+%     * referent has no time_reference       -> unresolved_target_no_time_reference (carry-096)
+%     * no `ontologyNode` on the label       -> unresolved_no_ontology_node (carry-097)
+%     * a field or edge outside the template -> unresolved_unplaced_fields (carry-100)
+%     * otherwise (a subject and a time)     -> carried_target_has_subject_and_time (carry-096)
+%   A carry-096 row names the label's target as its `dependency`, so a label
+%   whose target is itself carried as v1 is counted under carry-064 by the
+%   final stamp ([dependents of a carried document carry]).
 %
 %   REPORT fields (denominator first, unconditionally):
 %     ran                        false only if it returned before reading
@@ -156,14 +122,17 @@ function [plan, report] = ontologyLabelSubjects(migratedStructs)
 %     documents_unreadable       could not be read -- COUNTED, never dropped
 %     labels_passthrough         `ontologyLabel` documents still unconverted
 %     statements_indexed         migrated documents carrying a subject_id
-%     resolved                   labels with a plan entry
+%     resolved                   labels with a plan entry (0 since 2026-11-26)
 %     blocked_target_has_no_subject          THE E. COLI HALF
 %     blocked_by_target_class    struct: referent class -> blocked count
 %     unresolved_no_document_edge
 %     unresolved_target_not_in_batch
 %     unresolved_target_no_time_reference
 %     unresolved_no_ontology_node
-%     changed                    true iff PLAN is non-empty
+%     unresolved_unplaced_fields
+%     carried_target_has_subject_and_time
+%     carry_rows                 struct {id, row, dependency}, one per label
+%     changed                    true iff PLAN is non-empty (false since 2026-11-26)
 %
 %   See also: ndi.migrate.internal.ontologyRowsCarried,
 %   ndi.migrate.internal.pathSPromotion.
@@ -171,9 +140,6 @@ function [plan, report] = ontologyLabelSubjects(migratedStructs)
 arguments
     migratedStructs
 end
-
-% The one naming choice in this file, isolated so it is a one-line change.
-LABEL_VARIABLE = 'label';
 
 plan = struct('source_id', {}, 'subject_id', {}, 'statement_id', {}, ...
     'time_reference_id', {}, 'ontology_node', {}, 'body', {}, 'related', {});
@@ -192,6 +158,7 @@ report = struct( ...
     'unresolved_target_no_time_reference', 0, ...
     'unresolved_no_ontology_node',         0, ...
     'unresolved_unplaced_fields',          0, ...
+    'carried_target_has_subject_and_time', 0, ...
     'carry_rows',                          struct('id', {}, 'row', {}, 'dependency', {}), ...
     'changed',                             false);
 
@@ -308,11 +275,11 @@ for i = 1:numel(labelIdx)
         continue;
     end
     % [generic stage is lossless] and [partly placed is carried as v1] (Jess
-    % Haley, 2026-10-25, did-schema V_eta_go_forward_class_audit.md): the
-    % observation writes the label's `ontologyNode` and its `document_id`
-    % edge (as `derived_from`) and nothing else. A label stating any other
-    % field or edge is left as it is (carried as v1 at the end of
-    % ndi.migrate.local), counted here.
+    % Haley, 2026-10-25, did-schema V_eta_go_forward_class_audit.md): a label
+    % stating a field or edge beyond `ontologyNode` and `document_id` is
+    % malformed, and that row is checked before the needs_mapping carry
+    % below, as it was when the label was still written as an observation
+    % (which wrote those two and nothing else; until 2026-11-26).
     %
     % ITS ROW IS carry-100, NOT THE ontologyLabel TEMPLATE-FIELD ROW.
     % [ontologyLabel row split] (Jess Haley, 2026-10-27, did-schema
@@ -324,8 +291,7 @@ for i = 1:numel(labelIdx)
     % rows (did-schema did_v2_go_forward_class_audit.md; its tag names the two
     % row ids). The template at the locked NDI-matlab
     % main (ontologyLabel.json + base.json) has ONE label field, `ontologyNode`,
-    % and ONE edge, `document_id`, and the
-    % observation writes both. So everything labelHasUnplaced finds -- another
+    % and ONE edge, `document_id`. So everything labelHasUnplaced finds -- another
     % label field, or another edge (the `session_id` edge the migration adds
     % is not one) -- is outside the template, and no template field of a
     % label is left without a home here: that retired row never had a site
@@ -338,42 +304,26 @@ for i = 1:numel(labelIdx)
         continue;
     end
 
-    [body, rel] = termObservationBody(b, target, targetId, node, LABEL_VARIABLE);
-    plan(end+1) = struct( ...                                        %#ok<AGROW>
-        'source_id',         baseField(b, 'id'), ...
-        'subject_id',        target.subject_id, ...
-        'statement_id',      targetId, ...
-        'time_reference_id', target.time_reference_id, ...
-        'ontology_node',     node, ...
-        'body',              body, ...
-        'related',           {{rel}});
-    report.resolved = report.resolved + 1;
+    % A LABEL ON A STATEMENT WITH A SUBJECT AND A TIME IS CARRIED TOO.
+    % Jess Haley, 2026-11-26 (audit batch 2 (a), "Ok to all three"), applying
+    % [labels are a field on what they label] (2026-10-27) and [one-reading
+    % quick answers] Q3 (2026-10-26; did-schema
+    % did_v2_go_forward_class_audit.md): writing every label as a term
+    % observation of the labelled statement's subject, variable 'label', is
+    % a reading chosen for the dataset, not the one correct reading. The
+    % label is a field of the document it labels (its method, a variable, a
+    % condition, a method parameter), and the v1 document does not say which,
+    % so it is carried whole as v1, `needs_mapping`, under the decision's own
+    % row, as the two sites above are; each dataset's map names the slot. The
+    % target is named as the dependency, so a label whose target is itself
+    % carried is counted under carry-064 by the final stamp, as today.
+    % carry-register: carry-096
+    report.carried_target_has_subject_and_time = ...
+        report.carried_target_has_subject_and_time + 1;
+    report.carry_rows(end+1) = struct('id', labelId, 'row', 'carry-096', 'dependency', char(targetId));
 end
 
 report.changed = ~isempty(plan);
-end
-
-% ===================== the body ========================================
-
-function [body, rel] = termObservationBody(labelBody, target, targetId, node, variableName)
-%TERMOBSERVATIONBODY The label as a term observation of the referent's subject
-%   (id PRESERVED, time reference REUSED), and the `derived_from` relation from
-%   it to the labelled statement.
-S = ndi.migrate.internal.etaShape;
-sid = ndi.v2.sessionIdOf(labelBody);
-ds = baseField(labelBody, 'creation_timestamp');
-if isempty(ds); ds = baseField(labelBody, 'datestamp'); end
-common = {'SessionId', sid, 'Datestamp', ds};
-body = S.statement('observation', 'term', target.subject_id, ...
-    S.term('', variableName), S.term(node, ''), ...
-    'Id', baseField(labelBody, 'id'), ...
-    'TimeReferenceIds', {target.time_reference_id}, common{:});
-% the relation's id is derived from the label it is minted for, not random
-% ([migration reliability practices] (b), Jess Haley, 2026-10-26)
-rel = S.relation(body.base.id, targetId, ...
-    ndi.v2.vocabTerm('relation', 'derived_from'), common{:}, ...
-    'Id', did2.convert.mintId('ontology label derived_from', ...
-    did2.convert.mintKey(labelBody)));
 end
 
 % ===================== readers =========================================

@@ -116,19 +116,39 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
             ndi.unittest.migrate.printStimulusFoldReport(r, '20211116');
         end
 
-        function testObservesRetiresOnThePresentations(testCase)
-            % Decided by Jess Haley, 2026-11-17 [observes retires in the
-            % second pass] (did-schema did_v2_go_forward_class_audit.md): a
-            % stimulator's `observes` relation retires where a converted
-            % stimulus presentation names the same device and animal.
-            % 20211116's 11 presentations each name the stimulator as
-            % instrument and the stimulator's subject as entity (run
-            % 44018713804).
+        function testPresentationsWithNoClockAreCarriedAsV1(testCase)
+            % Decided by Jess Haley, 2026-11-26 [presentation clock read from
+            % its time file] (did-schema did_v2_go_forward_class_audit.md):
+            % a presentation's clock is its stimulator's element_epoch /
+            % epochclocktimes, else the clocktype v1 wrote in its own
+            % presentation_time.bin; with neither it is carried as v1
+            % (carry-109). The corpus zips hold no binary files
+            % (VH-Lab/NDI-matlab#785) and no 20211116 stimulator has a clock
+            % record for its epoch, so every presentation is carried (11
+            % of 11, end-to-end run 45847913080), as the decision records ("in the
+            % corpus runs this carries every presentation of B and
+            % 20211116"). INVERTED 2026-11-26: until then this test checked
+            % [observes retires in the second pass] on 20211116's converted
+            % presentations; with none converted, that rule is checked on
+            % a built fixture (TestObservesRetirement,
+            % testAMatchingPresentationRetiresTheRelation) and the clock
+            % from the file on another (TestMigrateLocalEta).
+            s = testCase.Result.secondPass.stimulusSequence;
+            n = s.presentations_read;
+            testCase.verifyGreaterThan(n, 0, '20211116 read no stimulus presentation (nothing measured)');
+            testCase.verifyEqual(s.epoch_clock_from_file, 0, ...
+                'a clock was read from a presentation_time.bin the corpus does not hold');
+            testCase.verifyEqual(s.epoch_clock_from_record, 0, ...
+                'a 20211116 presentation''s stimulator has a clock record for its epoch');
+            testCase.verifyEqual(s.epoch_clock_none, n, ...
+                'not every 20211116 presentation was found with no clock');
+            testCase.verifyEqual(s.epoch_carried.total, n, ...
+                'not every 20211116 presentation was carried as v1 (carry-109)');
             r = ndi.unittest.migrate.verifyObservesRetirement(testCase, testCase.Result, '20211116');
-            testCase.verifyGreaterThan(r.presentation_manipulations, 0, ...
-                '20211116 converted no stimulus presentation (nothing measured)');
-            testCase.verifyGreaterThan(r.observes_retired, 0, ...
-                '20211116 retired no `observes` relation on its presentations');
+            testCase.verifyEqual(r.presentation_manipulations, 0, ...
+                'a 20211116 presentation converted with no clock to anchor it on');
+            testCase.verifyEqual(r.retired_by_presentation, 0, ...
+                '20211116 retired an `observes` relation on a presentation it carried');
         end
 
         function testACarriedSubjectReadsBackAsV1(testCase)

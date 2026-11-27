@@ -149,8 +149,12 @@ function [structs, report, removed] = ingestedArchiveBodies(structs, ndiDir, v1B
 %     `time_channels_out_of_order_kept` and listed in REPORT.malformed {kind
 %     'time_channels_out_of_order', archive_id (the v1 archive),
 %     time_body_id, order (the time channel numbers in the list's order),
-%     reason (which says "malformed" and gives the order)}; the first reason
-%     is `first_malformed_reason`. The readers rebuild
+%     row ('carry-120'), reason (which cites [carry-120], says "malformed"
+%     and gives the order)}; the first reason is `first_malformed_reason`.
+%     The row is carry-120 [values no writer produces are malformed]: Decided
+%     by Jess Haley, 2026-11-26 [malformed cases cite carry-120] (did-schema
+%     did_v2_go_forward_class_audit.md), "the cases carried as v1 and
+%     reported as malformed cite carry-120", this one by name. The readers rebuild
 %     the v1 group file's segment from the split values (ndi.vintage.
 %     ingestedSplitTime), and DID-matlab's round trip rebuilds the v1 group
 %     file from them (did2.convert.roundtrip.ingestedArchiveFiles).
@@ -545,9 +549,11 @@ for a = 1:numel(groupKeys)
             if isempty(report.first_malformed_reason)
                 report.first_malformed_reason = why;
             end
+            % [malformed cases cite carry-120] (Jess Haley, 2026-11-26)
+            % carry-register: carry-120
             report.malformed{end+1} = struct('kind', info.malformed.kind, ...
                 'archive_id', baseId(arch), 'time_body_id', info.malformed.time_body_id, ...
-                'order', info.malformed.order, 'reason', why);
+                'order', info.malformed.order, 'row', 'carry-120', 'reason', why);
         end
         continue;
     end
@@ -831,9 +837,12 @@ for j = timeJ(:)'
     if any(diff(nums) <= 0)
         % [time channels out of order are malformed] (Jess Haley, 2026-11-25,
         % did-schema did_v2_standing_wiring_plan.md): kept unchanged as v1,
-        % and the report names the archive as malformed with the order found
+        % and the report names the archive as malformed with the order found;
+        % the reason cites carry-120 ([malformed cases cite carry-120], Jess
+        % Haley, 2026-11-26)
+        % carry-register: carry-120
         order = strjoin(arrayfun(@(x) sprintf('t%d', x), nums, 'UniformOutput', false), ', ');
-        why = sprintf(['malformed: the time channels of %s are listed in the order %s, ' ...
+        why = sprintf(['[carry-120] malformed: the time channels of %s are listed in the order %s, ' ...
             'not in increasing number, the order NDI''s writer lists them and its readers ' ...
             'take the file''s columns in; kept as v1 ([time channels out of order are ' ...
             'malformed])'], bodyFilename(b), order);
