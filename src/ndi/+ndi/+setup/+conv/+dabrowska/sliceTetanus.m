@@ -408,23 +408,15 @@ for k = 1:n
                 report.unanchored_statements_ambiguous = report.unanchored_statements_ambiguous + 1;
             end
         end
-    elseif strcmp(c, 'directed_relation')
-        [child, parent] = S.relationEnds(s);
-        if isKey(elementSlices, child) && strcmp(parent, elSubj(child)) ...
-                && strcmp(relationName(s), 'observes')
-            report.element_relations_examined = report.element_relations_examined + 1;
-            sl = elementSlices(child);
-            if isscalar(sl)
-                parentEdge = 'parent_id';
-                if isempty(depValue(s, 'parent_id')); parentEdge = 'parent'; end
-                structs{k} = setDep(s, parentEdge, sliceId(sl{1}));
-                replacedPos(end+1) = k; %#ok<AGROW>
-                report.element_relations_matched = report.element_relations_matched + 1;
-            else
-                report.element_relations_ambiguous = report.element_relations_ambiguous + 1;
-            end
-        end
     end
+    % An element's `observes` relation to its animal was re-parented to the
+    % slice here (element_relations_*). Decided by Jess Haley, 2026-11-26 [no
+    % observes relation in v2] (did-schema did_v2_standing_wiring_plan.md):
+    % v2 has no `observes` relation, so there is none to move; an element's
+    % subject is the entity of the statements made with it (moved above) or
+    % the subject the migration carried ([Dab stimulators with deferred
+    % baths read the animal], did_v2_go_forward_class_audit.md). It found
+    % none since VH-Lab/NDI-matlab#1279 (examined 0, matched 0, ambiguous 0).
 end
 
 % ======================= tetanus runs ==================================
@@ -729,8 +721,6 @@ r = struct( ...
     'epoch_statements_unmatched', 0, ...
     'unanchored_statements_examined', 0, 'unanchored_statements_matched', 0, ...
     'unanchored_statements_ambiguous', 0, ...
-    'element_relations_examined', 0, 'element_relations_matched', 0, ...
-    'element_relations_ambiguous', 0, ...
     'reattributed_by_class', struct(), ...
     'approach_labels', 0, 'labels_not_on_a_slice_epoch', 0, ...
     'labels_without_one_epoch_time', 0, 'labels_stimulator_mismatch', 0, ...

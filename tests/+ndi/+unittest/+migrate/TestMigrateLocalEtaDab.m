@@ -356,47 +356,46 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
         end
 
         function testObservesRetirementIsCounted(testCase)
-            % Decided by Jess Haley, 2026-11-17 [observes retires in the
-            % second pass] (did-schema did_v2_go_forward_class_audit.md): a
-            % stimulator's `observes` relation retires where a converted
-            % stimulus presentation names the same device and animal. The
-            % record of [stimulator link lives in the presentations] states
-            % that Dab holds no presentations, so none retires on one.
-            % Decided by Jess Haley, 2026-11-19 [bath manipulation retires
-            % observes] (same document): a bath manipulation naming the
-            % stimulator as instrument and its subject as entity retires it
-            % by the same rule; Dab writes bath manipulations
-            % (stimulusBathToBath), so Dab's bath stimulators retire on them.
-            % Before that decision this test stated that nothing retires
-            % without a presentation. The stimulators reading their subject
-            % back from the baths is testTheSameObjectsBeforeAndAfterMigration's.
-            %
-            % SINCE AUDIT BATCH 2 (b) (Jess Haley, 2026-11-26, building
-            % [one-reading quick answers] Q2): Dab writes NO bath manipulation.
-            % Of its 1,605 baths, 1,172 are carried for their units (carry-155,
-            % [Dab bath units are Dabrowska's]) and the other 433 because no
-            % clock record gives their stimulator's epoch (carry-157,
-            % testBathsWithNoClockRecordAreCarriedAsV1), so none retires an
-            % `observes` relation on a bath, and every stimulator's relation
-            % retires as carried (its subject read back from the carried
+            % Decided by Jess Haley, 2026-11-26 [no observes relation in v2]
+            % (did-schema did_v2_standing_wiring_plan.md): v2 has no
+            % `observes` relation; NDI's second pass reads each element's v1
+            % `subject_id` directly, and the animal is the `entity_id` of
+            % the observations and manipulations made with the element, or,
+            % where none names it, is carried as the element's subject
+            % ([one-field carry in the migration report], 2026-11-19).
+            % Dab holds no presentations, and since audit batch 2 (b) (Jess
+            % Haley, 2026-11-26, building [one-reading quick answers] Q2) no
+            % bath manipulation: of its 1,605 baths, 1,172 are carried for
+            % their units (carry-155, [Dab bath units are Dabrowska's]) and
+            % the other 433 because no clock record gives their
+            % stimulator's epoch (carry-157,
+            % testBathsWithNoClockRecordAreCarriedAsV1). So no Dab element's
+            % subject is read from a presentation or a bath, and every
+            % stimulator's subject is carried (read back from the carried
             % fields, checked below). The bath rule itself is
-            % TestObservesRetirement's. Until then this test asserted that Dab
-            % converts bath manipulations and retires on them.
+            % TestObservesRetirement's.
+            % INVERTED 2026-11-27 for [no observes relation in v2]: until
+            % then this test counted the `observes` relations retired on a
+            % presentation, on a bath, and with the subject carried
+            % (retired_by_presentation, retired_by_bath, retired_carried:
+            % 0, 0, 200 in Dab run 45916451788); it now counts the elements
+            % named by each statement and carried, and that no `observes`
+            % relation is left (verifyObservesRetirement).
             r = ndi.unittest.migrate.verifyObservesRetirement(testCase, testCase.Result, 'Dab');
-            testCase.verifyEqual(r.retired_by_presentation, 0, ...
-                'Dab retired an `observes` relation on a presentation it does not hold');
+            testCase.verifyEqual(r.named_by_presentation, 0, ...
+                'a Dab element''s subject was read from a presentation Dab does not hold');
             testCase.verifyEqual(r.bath_manipulations, 0, ...
                 'a Dab bath was converted: every one is carried (carry-155, carry-157)');
-            testCase.verifyEqual(r.retired_by_bath, 0, ...
-                'Dab retired an `observes` relation on a bath manipulation it does not hold');
-            testCase.verifyGreaterThan(r.retired_carried, 0, ...
-                'no Dab `observes` relation retired as carried (nothing measured)');
+            testCase.verifyEqual(r.named_by_bath, 0, ...
+                'a Dab element''s subject was read from a bath manipulation Dab does not hold');
+            testCase.verifyGreaterThan(r.carried, 0, ...
+                'no Dab element''s subject was carried (nothing measured)');
             % [one-field carry in the migration report]: an element whose
-            % `observes` retires because no statement names its v1 subject
-            % reads that subject back from the carried fields (0 included)
+            % statements do not give its v1 subject back reads that subject
+            % from the carried fields (0 included)
             n = ndi.unittest.migrate.verifyCarriedSubjects(testCase, testCase.Result, ...
                 testCase.Bodies, 'Dab');
-            testCase.verifyEqual(n, r.retired_carried, 'not every carried element was checked');
+            testCase.verifyEqual(n, r.carried, 'not every carried element was checked');
         end
 
         function testReadPhasesAreNoSlowerThanV1(testCase)
@@ -760,7 +759,9 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             % before the map runs (run 44489261942: 147 retired by a bath,
             % 55 with the animal carried in the migration report), so the map
             % finds no element `observes` relation to move to a slice
-            % (examined, matched, ambiguous: 202, 201, 1 -> 0, 0, 0) and
+            % (examined, matched, ambiguous: 202, 201, 1 -> 0, 0, 0; those
+            % three counters were removed with the map's `observes` branch
+            % for [no observes relation in v2], Jess Haley, 2026-11-26) and
             % re-attributes 201 fewer documents (4190 -> 3989, the same in
             % reattributions_applied). The 147 still read their slice: the
             % map moved their baths (formulation_manipulation 433, as
@@ -781,8 +782,6 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
                 'epoch_statements_unmatched', 26 + 13, ...
                 'unanchored_statements_examined', 400, 'unanchored_statements_matched', 398, ...
                 'unanchored_statements_ambiguous', 2, ...
-                'element_relations_examined', 0, 'element_relations_matched', 0, ...
-                'element_relations_ambiguous', 0, ...
                 'approach_labels', 635, 'runs_examined', 56, ...
                 'tetanus_manipulations', 56, 'tetanus_on_new_animal', 1, ...
                 'tetanus_with_target_region', 55, 'tetanus_without_target_region', 1, ...

@@ -377,8 +377,9 @@ classdef TestMigrateLocalEtaPRED < matlab.unittest.TestCase
             % from the epoch's files, which PRED does not carry, so there is
             % no such donor. Decided by Jess Haley, 2026-10-21 [preview
             % attribution without epoch files] (did-schema
-            % V_eta_recording_observation_plan.md): the element's kept
-            % `observes` relation (probe observes organism) is the donor.
+            % V_eta_recording_observation_plan.md): the element is the donor:
+            % its v1 `subject_id`, read directly ([no observes relation in
+            % v2], Jess Haley, 2026-11-26; its `observes` relation before).
             [result, bodies] = runPredMigrate(testCase);
             docs = destinationBodies(result.destination);
             obs = pyraviewObservation(testCase, docs, bodies);
@@ -388,8 +389,8 @@ classdef TestMigrateLocalEtaPRED < matlab.unittest.TestCase
                 ['PRED holds one animal and no entity of type organism came ' ...
                  'back. ' resultDiag(result)]);
             ra = result.secondPass.recordingAttribution;
-            verifyEqual(testCase, ra.attributed_via_observes, 1, ...
-                'PRED''s one pyraview is attributed through the element''s observes');
+            verifyEqual(testCase, ra.attributed_via_element_subject, 1, ...
+                'PRED''s one pyraview is attributed through the element''s v1 subject');
             verifyEqual(testCase, ra.refused_no_donor, 0, resultDiag(result));
             probe = findById(docs, depValue(obs, 'instrument_id'));
             verifyEqual(testCase, depValue(obs, 'entity_id'), organism.base.id, ...

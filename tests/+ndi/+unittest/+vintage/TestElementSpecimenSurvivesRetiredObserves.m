@@ -38,27 +38,50 @@ classdef TestElementSpecimenSurvivesRetiredObserves < matlab.unittest.TestCase
 
     methods (Test)
 
-        function testTheMigratorStillRetiresObserves(testCase)
-            % If this ever stops being true, the reader's instrument-edge
-            % lookup becomes dead code rather than a bug -- so it is
-            % asserted rather than assumed. The failure direction matters:
-            % a reader that checks BOTH shapes is correct either way, but
-            % a silent change here would leave nobody able to explain why
-            % the extra query exists.
+        function testNoObservesRelationIsLeftForTheReader(testCase)
+            % INVERTED 2026-11-27 for [no observes relation in v2] (Decided
+            % by Jess Haley, 2026-11-26, did-schema
+            % did_v2_standing_wiring_plan.md): v2 has no `observes` relation.
+            % Until then this test asserted that DID-matlab's element
+            % migrator still writes one, because elementFields fell back to
+            % it for a stimulator. Now elementFields reads no `observes`
+            % (testTheReaderDoesNotReadObserves), so the invariant across the
+            % two repositories is: either the migrator writes no `observes`
+            % relation, or NDI's second pass removes every one it wrote
+            % (ndi.migrate.internal.observesRetirement, observes_removed).
             src = testCase.sourceOf('did2.convert.migrators_j.element');
             testCase.log(sprintf( ...
                 'DENOMINATOR: element migrator source is %d char(s)', numel(src)));
+            writesObserves = ~isempty(regexp(src, ...
+                'lineageRelation\([^)]*''observes''\)', 'once'));
+            if writesObserves
+                pass = fileread(which('ndi.migrate.internal.observesRetirement'));
+                testCase.verifySubstring(pass, 'observes_removed', ...
+                    ['The element migrator still writes `observes` and NDI''s ' ...
+                     'second pass no longer removes it: a v2 dataset would keep ' ...
+                     'a relation v2 does not have.']);
+            else
+                testCase.verifyEmpty(regexp(src, '''observes''\)', 'once'), ...
+                    'The element migrator writes an `observes` relation by another call.');
+            end
+        end
 
-            testCase.verifySubstring(src, 'retireObserves', ...
-                ['The element migrator no longer mentions `retireObserves`. ' ...
-                 'ndi.vintage.elementFields recovers the specimen from the ' ...
-                 'observation''s instrument_id BECAUSE the migrator ' ...
-                 'suppresses `observes` when that observation exists.']);
-
-            testCase.verifySubstring(src, '''observes''', ...
-                ['The element migrator no longer writes an `observes` ' ...
-                 'relation at all. elementFields still falls back to it ' ...
-                 'for the stimulator case, which would now find nothing.']);
+        function testTheReaderDoesNotReadObserves(testCase)
+            % [no observes relation in v2]: the subject is read from the
+            % statements and the carried subject, never from `observes`.
+            % The control: the reader does read those.
+            code = testCase.codeOf('ndi.vintage.elementFields');
+            testCase.verifyEmpty(strfind(code, '''observes'''), ...
+                'ndi.vintage.elementFields reads an `observes` relation again.');
+            testCase.verifySubstring(code, 'ndi.vintage.carriedSubjects', ...
+                'ndi.vintage.elementFields does not read the carried subject.');
+            testCase.verifySubstring(code, 'ndi.vintage.subjectNamingManipulations', ...
+                'ndi.vintage.elementFields does not read the manipulations.');
+            pre = testCase.codeOf('ndi.vintage.prefetchElementFields');
+            testCase.verifyEmpty(strfind(pre, '''observes'''), ...
+                'ndi.vintage.prefetchElementFields reads an `observes` relation again.');
+            testCase.verifySubstring(pre, 'ndi.vintage.subjectNamingManipulations', ...
+                'ndi.vintage.prefetchElementFields does not read the manipulations.');
         end
 
         function testTheAssemblerIsWhatSetsTheFlag(testCase)
@@ -142,6 +165,12 @@ classdef TestElementSpecimenSurvivesRetiredObserves < matlab.unittest.TestCase
                     fname));
             end
             src = fileread(p);
+        end
+
+        function code = codeOf(~, fname)
+            % the source of FNAME with its comments removed
+            lines = strsplit(fileread(which(fname)), newline);
+            code = strjoin(regexprep(lines, '%.*$', ''), newline);
         end
 
         function src = sourceNear(~, siblingFunction, relPath)

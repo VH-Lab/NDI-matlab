@@ -3,9 +3,10 @@ function n = verifyCarriedSubjects(testCase, result, v1Bodies, label)
 %
 %   N = ndi.unittest.migrate.verifyCarriedSubjects(TESTCASE, RESULT, V1BODIES, LABEL)
 %   reads RESULT.secondPass.observesRetirement.carried_element_ids
-%   (ndi.migrate.local): the migrated elements whose `observes` relation
-%   retired with their v1 subject held in the migration report's carried
-%   fields (Decided by Jess Haley, 2026-11-19, did-schema
+%   (ndi.migrate.local): the migrated elements whose v1 subject the
+%   statements made with them do not give back, held in the migration
+%   report's carried fields ([no observes relation in v2], Jess Haley,
+%   2026-11-26; Decided by Jess Haley, 2026-11-19, did-schema
 %   did_v2_standing_wiring_plan.md: [stimulator subject carried as needing
 %   information], [one-field carry in the migration report], [recording
 %   probe subject carried the same way]; carry register row carry-172).

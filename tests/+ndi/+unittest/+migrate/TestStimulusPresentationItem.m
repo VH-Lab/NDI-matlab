@@ -821,16 +821,19 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             testCase.verifyEmpty(report.reason);
         end
 
-        function testTheStimulatorRouteManipulationRetiresObserves(testCase)
-            % [observes retires in the second pass] (Jess Haley, 2026-11-17):
-            % the manipulation this function writes names the stimulator as
-            % instrument and its animal as entity, so the stimulator's
-            % pass-1 `observes` relation (DID-matlab element.m lineageRelation)
-            % retires on it, with nothing carried. An `observes` of another
-            % animal, which no presentation names, retires with that animal
-            % carried in the migration report ([stimulator subject carried as
-            % needing information], Jess Haley, 2026-11-19, did-schema
-            % did_v2_standing_wiring_plan.md; before it, kept_other_entity)
+        function testTheStimulatorRouteManipulationNamesTheSubject(testCase)
+            % [no observes relation in v2] (Jess Haley, 2026-11-26, did-schema
+            % did_v2_standing_wiring_plan.md): the manipulation this function
+            % writes names the stimulator as instrument and its animal as
+            % entity, so the stimulator's v1 subject is named by it, with
+            % nothing carried, and a pass-1 `observes` relation (DID-matlab
+            % element.m lineageRelation, before that decision) is removed. A
+            % stimulator whose v1 subject is another animal, which no
+            % presentation names, has that animal carried in the migration
+            % report ([stimulator subject carried as needing information],
+            % Jess Haley, 2026-11-19). INVERTED 2026-11-27 from
+            % testTheStimulatorRouteManipulationRetiresObserves, which fed
+            % the `observes` relation as the subject
             % (ndi.unittest.migrate.TestObservesRetirement)
             pres = presentationBody('pres_stim', [1 2], ...
                 { gratingStim(0, 0.04, 0.5), gratingStim(45, 0.04, 0.5) });
@@ -847,21 +850,19 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             % the stimulator as migrated: an entity, its v1 id kept
             el = ndi.migrate.internal.etaShape.entity('device', struct('name', 'stim'), ...
                 'Id', stimId, 'SessionId', pres.base.session_id);
-            [ids, rep, carries] = ndi.migrate.internal.observesRetirement({m, rel, el});
+            [ids, rep, carries] = ndi.migrate.internal.observesRetirement({m, rel, el}, ...
+                'ElementSubjects', containers.Map({stimId}, {'animal_stim'}));
             testCase.verifyEqual(ids, {'observes_1'});
             testCase.verifyEqual(rep.presentation_manipulations, 1);
-            testCase.verifyEqual(rep.observes_retired, 1);
-            testCase.verifyEqual(rep.retired_by_presentation, 1);
+            testCase.verifyEqual(rep.named_by_presentation, 1);
+            testCase.verifyEqual(rep.observes_removed, 1);
             testCase.verifyEmpty(carries, 'the presentation names the animal: nothing to carry');
-            other = ndi.migrate.internal.etaShape.relation(stimId, 'animal_other', ...
-                struct('node', '', 'name', 'observes'), 'Id', 'observes_2', ...
-                'SessionId', pres.base.session_id);
-            [ids, rep, carries] = ndi.migrate.internal.observesRetirement({m, other, el});
-            testCase.verifyEqual(ids, {'observes_2'}, ...
-                'an `observes` of an animal no presentation names did not retire');
-            testCase.verifyEqual(rep.retired_by_presentation, 0, ...
-                'an `observes` of another animal was retired on the presentation');
-            testCase.verifyEqual(rep.retired_carried, 1);
+            [ids, rep, carries] = ndi.migrate.internal.observesRetirement({m, el}, ...
+                'ElementSubjects', containers.Map({stimId}, {'animal_other'}));
+            testCase.verifyEmpty(ids);
+            testCase.verifyEqual(rep.named_by_presentation, 0, ...
+                'another animal was read from the presentation');
+            testCase.verifyEqual(rep.carried, 1);
             testCase.verifyEqual(rep.carried_other_entity, 1);
             testCase.assertNumElements(carries, 1);
             testCase.verifyEqual(carries.element_id, stimId);

@@ -147,8 +147,10 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
             r = ndi.unittest.migrate.verifyObservesRetirement(testCase, testCase.Result, '20211116');
             testCase.verifyEqual(r.presentation_manipulations, 0, ...
                 'a 20211116 presentation converted with no clock to anchor it on');
-            testCase.verifyEqual(r.retired_by_presentation, 0, ...
-                '20211116 retired an `observes` relation on a presentation it carried');
+            % [no observes relation in v2] (Jess Haley, 2026-11-26): no
+            % element's subject is read from a presentation it carried
+            testCase.verifyEqual(r.named_by_presentation, 0, ...
+                '20211116 read an element''s subject from a presentation it carried');
         end
 
         function testACarriedSubjectReadsBackAsV1(testCase)
@@ -161,11 +163,11 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
             % migration report], carry register row carry-172), and NDI's
             % readers read it back (ndi.vintage.elementFields, getprobes).
             r = ndi.unittest.migrate.verifyObservesRetirement(testCase, testCase.Result, '20211116');
-            testCase.verifyGreaterThan(r.retired_carried, 0, ...
+            testCase.verifyGreaterThan(r.carried, 0, ...
                 '20211116 carried no subject (the decision records 1 n-trode with no recording observation)');
             n = ndi.unittest.migrate.verifyCarriedSubjects(testCase, testCase.Result, ...
                 testCase.Bodies, '20211116');
-            testCase.verifyEqual(n, r.retired_carried, 'not every carried element was checked');
+            testCase.verifyEqual(n, r.carried, 'not every carried element was checked');
         end
 
         function testControlRecordsFoldIntoACovariateOrAreCounted(testCase)

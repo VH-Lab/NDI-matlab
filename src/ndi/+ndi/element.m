@@ -163,9 +163,10 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
                     direct = logical(element_doc.document_properties.element.direct);
                 end
                 if isEtaElement
-                    % The specimen is an `observes` relation, not an edge:
-                    % v1's `subject_id` on the element became a
-                    % directed_relation pointing at the animal.
+                    % The specimen is not an edge of the entity: v1's
+                    % `subject_id` is the entity of the statements made with
+                    % the element, or the subject the migration carried
+                    % ([no observes relation in v2]; ndi.vintage.elementFields).
                     subject_id = ef.subject_id;
                     % A migrated sorted unit is written with no subject: it
                     % follows from its probe (Decided by Jess Haley,

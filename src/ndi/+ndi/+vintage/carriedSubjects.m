@@ -17,7 +17,8 @@ function [subjectId, found, carried, sources] = carriedSubjects(S, elementId)
 %     [stimulator subject carried as needing information]  a migrated
 %                 stimulator whose v1 `subject_id` no statement names gets no
 %                 `observes`; its v1 subject is recorded as needing
-%                 information;
+%                 information ([no observes relation in v2], 2026-11-26: no
+%                 element gets one);
 %     [one-field carry in the migration report]  it is held in the run's
 %                 migration report, a "carried fields" list {document_id,
 %                 class, field, value, carry, reason}, written by NDI's
@@ -26,7 +27,7 @@ function [subjectId, found, carried, sources] = carriedSubjects(S, elementId)
 %     [recording probe subject carried the same way]  likewise for a
 %                 recording probe with no recording observation.
 %   ndi.vintage.elementFields reads it as the element's `subject_id` where
-%   no observation and no `observes` relation names one, so the v1 element
+%   no observation names one, before the manipulations, so the v1 element
 %   reads back as it was (`direct` true).
 %
 %   WHERE THE REPORT IS. A migration writes one `migration` document per
