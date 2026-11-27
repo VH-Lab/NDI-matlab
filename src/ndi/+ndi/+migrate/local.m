@@ -1141,15 +1141,9 @@ function result = local(path, options)
             % probemap (increment 3 renames it), so a failure here leaves the
             % dataset exactly as this pass found it.
             % The v1 element subjects it compares a stimulator row's subject
-            % with (did2.convert.elementSubjects) are those of THIS batch: every
-            % did2.convert.v1_to_v2 call of the steps above (a re-fold of one
-            % body) reset that index to its own input, so it is loaded again
-            % from the migration input ([no observes relation in v2]: no
-            % `observes` relation states the element's subject).
-            if ~isempty(which('did2.convert.elementSubjects'))
-                did2.convert.elementSubjects('reset');
-                did2.convert.elementSubjects('load', bodies);
-            end
+            % with ([no observes relation in v2]: no `observes` relation
+            % states the element's subject) are pass 1's, handed on in
+            % convertResult.element_subjects by did2.convert.v1_to_v2.
             [convertResult, epochProbemapReport] = ...
                 did2.convert.resolveEpochProbemap( ...
                 convertResult, ...
