@@ -1,0 +1,1 @@
+{"filename":"data_time_uneven.bin","dtype":"float64","size":[1000,2],"description":"Unevenly spaced time samples (column 1: 10 kHz with up to 30 us jitter; column 2: 20 kHz with a 0.25 s gap after sample 500), written by ndi.compress.compress_time"}
